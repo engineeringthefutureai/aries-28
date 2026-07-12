@@ -50,7 +50,7 @@ Internet / Home LAN
 - **Subnet:** `10.28.0.0/24`. Gateway `.1`, static leases `.11–.19` for nodes, `.100+` DHCP pool for maintenance.
 - **Naming:** `aries-gw`, `aries-cp-1..3`, `aries-wk-*`, `aries-st-*`, `aries-face`.
 - **Ingress:** all external traffic via gateway; port-forward or WireGuard only. Cluster invisible to home LAN by default.
-- **DNS:** dnsmasq (or Pi-hole) on gateway — `*.aries.lan` resolves internally.
+- **DNS:** dnsmasq on the gateway resolves internal names on the cluster subnet — `*.aries.lan` (nodes by hostname; services via the ingress). Home-LAN and internet access use separate naming scopes (`*.athome.example.com` and the public domain) — see `dns-and-exposure.md` §1.1.
 - **No WiFi anywhere inside the box.** The face node uses a USB-ethernet adapter.
 - **VLAN plan (managed switch, TL-SG108E):** VLAN 10 cluster, VLAN 20 face/kiosk, VLAN 99 MAINT; gateway port trunked, router-on-a-stick between them. Port mirroring to MAINT = live Wireshark classroom. Switch management IP moved from factory default into `10.28.0.0/24` at first boot.
 

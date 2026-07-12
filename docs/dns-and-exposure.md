@@ -22,6 +22,24 @@ name  →  gateway (reverse proxy)  →  cluster ingress  →  Service  →  pod
 
 The control plane (API server, etcd) is **not** in this path — user traffic never touches it. It only serves the Kubernetes API (used by kubectl and the LED daemon).
 
+### 1.1 Three naming scopes
+
+A name resolves differently depending on where the client sits, and the three scopes use **three distinct domains** so they never overlap — a given name means exactly one thing:
+
+| Scope | Domain | Resolver | Resolves to | TLS | Reachable from |
+|---|---|---|---|---|---|
+| **On-subnet** | `*.aries.lan` | dnsmasq on the gateway | internal addresses on `10.28.0.0/24` (nodes directly; services via the ingress) | none — internal only | inside the Aries subnet (a node, or a laptop on the MAINT port) |
+| **Home LAN** | `*.athome.example.com` | public DNS, or a local resolver (§6) | the gateway's home-LAN IP → reverse proxy | real, via DNS-01 (§7) | any device on the home LAN |
+| **Internet** | `*.example.com` | public DNS | Cloudflare tunnel → gateway (§8) | real, via Cloudflare | anywhere |
+
+Access narrows as the client moves outward from the box:
+
+- **On the internal subnet** — direct access to every node and service by its `*.aries.lan` name.
+- **From the home LAN** — no direct route to nodes; a node is reached only by jumping through the gateway **bastion** (`ssh -J`, network-design §7.1), and a service only through the gateway **reverse proxy** at `*.athome.example.com`.
+- **From the internet** — no node access at all; only the reverse proxy is exposed, at `*.example.com` through the Cloudflare tunnel.
+
+The rest of this document details the outer two scopes — §5–7 the home-LAN (`athome`) scope, §8 the internet scope. The innermost `*.aries.lan` scope is served entirely by dnsmasq on the gateway (design-doc §2.1) and needs no public DNS.
+
 ---
 
 ## 2. Locating a service: by port, then by name
@@ -83,7 +101,7 @@ Every subdomain then resolves automatically. New services (`grafana.athome…`, 
 
 ## 6. Internal resolution (home LAN, no internet dependency)
 
-Resolving service names from devices on the home LAN, independent of any cloud service. Several methods are available; the practical constraint is the home router's capabilities.
+Resolving service names from devices on the home LAN, independent of any cloud service. Several methods are available; the practical constraint is the home router's capabilities. (This is the **home-LAN** scope, `*.athome.example.com` — distinct from the on-subnet `*.aries.lan` scope of §1.1, which serves clients already inside the Aries network.)
 
 ### 6.1 Home-router constraint
 Many consumer routers — particularly mesh systems oriented toward simplicity — expose no local DNS controls: no custom local records, no custom-zone resolution, and no conditional forwarding. Such routers typically do allow the *upstream* DNS server to be changed. That single setting is the integration point for every server-based method below: the router is pointed at a resolver that does support local records. Where a router does support local DNS records or conditional forwarding directly, the wildcard entry (§6.2) can be placed on the router itself and the separate resolver is unnecessary.
