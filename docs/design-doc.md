@@ -234,7 +234,11 @@ Single front-panel control for orderly fleet shutdown. No battery, no always-on 
 **Known edge case:** face carrier pulled or face node down → soft-off silently degrades to hard-off (SSR already open; toggle-off cuts instantly). LED panel must show a warning state whenever the face node is absent.
 **Day-one accommodations:** DPST toggle + SSR footprint in the power bay; one fuse-block circuit reserved; note that a halted Pi still draws power — `shutdown -h` makes filesystems safe but only the SSR actually de-energizes the tower.
 
+---
 
+## 5. Software Stack
+
+The software layer, top to bottom. Everything non-physical is captured as code (§5.1).
 
 | Layer | Choice | Notes |
 |---|---|---|
