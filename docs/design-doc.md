@@ -261,26 +261,30 @@ Everything non-physical is a file in git: Ansible playbooks/inventory, k3s boots
 
 ```
 aries-28/
-├── README.md              # photos up top, story, architecture diagram
+├── README.md               # overview, philosophy, repo map
 ├── docs/
-│   ├── design-doc.md      # this file
-│   ├── bom.md             # living BOM with prices/links
-│   ├── power.md           # budget, fuse map, calibration procedure
-│   └── build-log/         # dated posts + photos
-├── hardware/
-│   ├── cad/               # Fusion/FreeCAD/STEP sources
-│   ├── stl/               # sled variants, brackets, rails, matrix mounts
-│   └── svg/               # front panel, connection panel, engravings
-├── ansible/
-│   ├── inventory/
-│   ├── playbooks/
-│   └── roles/             # base, gateway, k3s_server, k3s_agent, face
-├── kubernetes/
-│   ├── infrastructure/    # longhorn, metrics-server, cert-manager
-│   └── apps/              # nextcloud, minio, ...
-├── led-daemon/            # python; MAX_BRIGHTNESS cap lives here
-└── LICENSE                # MIT (code) + CC-BY-SA (hardware/docs)
+│   ├── architecture.md         # containment hierarchy (start here)
+│   ├── design-doc.md           # this file — physical, power, BOM (§7), phases, SPOFs
+│   ├── network-design.md       # topology, gateway, VLANs, switching
+│   ├── dns-and-exposure.md     # naming scopes, DNS, ingress, TLS
+│   ├── rack-design.md          # rack & carrier mounting mechanism
+│   ├── lighting-design.md      # optional two-tier lighting
+│   ├── node-setup.md           # k3s + partitioned-NVMe runbook
+│   ├── diagrams/               # Graphviz source + render
+│   └── images/                 # renders (build-log photos later)
+├── hardware/                   # fabrication files, organized BY PART, not by format
+│   ├── README.md                   # parts index + fabrication legend
+│   └── <part>/                     # carrier, rack, frame, panels, spacer, power-bay,
+│                                   #   switch-mount, cable-brace, connection-panel —
+│                                   #   each: its own README + all format options
+├── kubernetes/                 # cluster manifests (generic example included)
+├── ansible/                    # node provisioning (IaC) — placeholder
+├── LICENSE                     # MIT (code) + CC-BY-SA 4.0 (hardware/docs)
+└── .gitignore
 ```
+
+(BOM and power live in this document — §7 and §4 — not in separate files. The
+LED daemon and Ansible roles are described in the docs but not yet committed.)
 
 ---
 
