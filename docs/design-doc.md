@@ -7,7 +7,7 @@ Version 0.5 — July 2026
 
 ## 1. Mission & Non-Goals
 
-**Mission:** Build a 7-node (expandable to 10) ARM Linux cluster in a desktop-tower-style enclosure that serves as (a) a private cloud (storage + hosting), (b) a hands-on Kubernetes/infrastructure learning platform, and (c) a display piece with live status visualization and a front-panel dashboard screen.
+**Mission:** Build an ARM Linux cluster in a desktop-tower-style enclosure — starting from a single working node and growing to a full single-box fleet (the enclosure has 10 node bays; today's build populates seven), with further growth by adding boxes rather than rebuilding (see `network-design.md` §6). It serves as (a) a private cloud (storage + hosting), (b) a hands-on Kubernetes/infrastructure learning platform, and (c) a display piece with live status visualization and a front-panel dashboard screen.
 
 **Non-goals:** Production reliability guarantees, performance competitiveness with x86, minimizing cost at the expense of learnability. This is a toy with a curriculum.
 
