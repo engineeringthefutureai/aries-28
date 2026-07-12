@@ -1,0 +1,98 @@
+digraph Aries28 {
+  rankdir=TB;
+  compound=true;
+  nodesep=0.35;
+  ranksep=0.75;
+  bgcolor="#0d1117";
+  fontname="Helvetica"; fontcolor="#c9d1d9"; fontsize=16;
+  labelloc="t";
+  label="Aries 28 — Software Components within Physical Devices\n ";
+  node [fontname="Helvetica", fontsize=11, style="filled,rounded", shape=box,
+        color="#30363d", fontcolor="#e6edf3", penwidth=1.2, margin="0.15,0.09"];
+  edge [color="#8b949e", fontname="Helvetica", fontsize=9, fontcolor="#adbac7", penwidth=1.3];
+
+  // ================= EXTERNAL =================
+  internet [label="Internet  /  Home LAN", shape=oval, fillcolor="#1c2b3a",
+            color="#3b82f6", fontcolor="#bfdbfe", penwidth=2];
+
+  // ================= GATEWAY (Pi 4, outside k8s) =================
+  subgraph cluster_gw {
+    label="GATEWAY  ·  Raspberry Pi 4  ·  outside k3s";
+    style="filled,rounded"; fillcolor="#241832"; color="#a855f7";
+    fontcolor="#e9d5ff"; fontsize=12; penwidth=2; margin=14;
+    gw_bastion [label="SSH bastion", fillcolor="#3a2a52"];
+    gw_wg      [label="WireGuard\nVPN endpoint", fillcolor="#3a2a52"];
+    gw_proxy   [label="Reverse proxy\ningress forwarder", fillcolor="#3a2a52"];
+    gw_dns     [label="DNS · dnsmasq\n(*.aries.lan)", fillcolor="#3a2a52"];
+    gw_dhcp    [label="DHCP", fillcolor="#3a2a52"];
+    gw_tunnel  [label="cloudflared\ntunnel (optional)", fillcolor="#241d30",
+                color="#7c6a99", style="filled,rounded,dashed", fontcolor="#c4b5d8"];
+    // keep gateway internals in a tidy row
+    gw_bastion -> gw_wg -> gw_proxy -> gw_dns -> gw_dhcp -> gw_tunnel [style=invis];
+    {rank=same; gw_bastion; gw_wg; gw_proxy; gw_dns; gw_dhcp; gw_tunnel;}
+  }
+
+  // ================= FACE NODE (Pi 3A+, outside k8s) =================
+  subgraph cluster_face {
+    label="FACE NODE  ·  Raspberry Pi 3A+  ·  outside k3s";
+    style="filled,rounded"; fillcolor="#14301a"; color="#22c55e";
+    fontcolor="#bbf7d0"; fontsize=12; penwidth=2; margin=14;
+    face_dash [label="Monitoring dashboard\nNetdata / Grafana kiosk\n→ 7\" display", fillcolor="#1e3d22"];
+    face_led  [label="LED daemon\n→ WS2812 + fan\n(cluster-state colors)", fillcolor="#1e3d22"];
+    face_dash -> face_led [style=invis];
+    {rank=same; face_dash; face_led;}
+  }
+
+  // ================= K3S CLUSTER =================
+  subgraph cluster_k8s {
+    label="k3s CLUSTER  ·  spans Raspberry Pi 5 nodes (control-plane + workers)";
+    style="filled,rounded"; fillcolor="#0c2836"; color="#38bdf8";
+    fontcolor="#bae6fd"; fontsize=12; penwidth=2; margin=16;
+
+    subgraph cluster_cp {
+      label="control plane";
+      style="filled,rounded"; fillcolor="#103444";
+      color="#0ea5e9"; fontcolor="#bae6fd"; fontsize=10; margin=10;
+      k_api   [label="API server", fillcolor="#15455a"];
+      k_etcd  [label="etcd\n(NVMe partition)", fillcolor="#15455a"];
+      k_sched [label="scheduler", fillcolor="#15455a"];
+      k_api -> k_etcd [style=invis]; k_etcd -> k_sched [style=invis];
+      {rank=same; k_api; k_etcd; k_sched;}
+    }
+
+    k_ingress [label="Ingress controller\n(Traefik)", fillcolor="#15455a"];
+    k_app     [label="App pods\n(services × replicas)", fillcolor="#1b586e", penwidth=1.6];
+    k_metrics [label="metrics-server", fillcolor="#15455a"];
+    k_long    [label="Longhorn\ndistributed storage", fillcolor="#15455a"];
+
+    k_ingress -> k_app  [label="route by host"];
+    k_app -> k_long     [label="volumes", style=dotted, color="#7fb8d8"];
+    {rank=same; k_metrics; k_long;}
+  }
+
+  // ================= CROSS-BOUNDARY RELATIONS =================
+  // external in
+  internet -> gw_bastion [label="SSH", style=dashed];
+  internet -> gw_wg      [label="VPN"];
+  internet -> gw_proxy   [label="HTTPS"];
+  internet -> gw_tunnel  [style=dashed, color="#7c6a99"];
+
+  // gateway -> cluster ingress
+  gw_proxy  -> k_ingress [label="forward", lhead=cluster_k8s, color="#c084fc"];
+  gw_tunnel -> k_ingress [style=dashed, lhead=cluster_k8s, color="#7c6a99"];
+
+  // face node reads cluster (no traffic, just observation)
+  face_led  -> k_api     [label="polls state", style=dashed, color="#4ade80", lhead=cluster_k8s];
+  face_dash -> k_metrics [label="reads metrics", style=dashed, color="#4ade80", lhead=cluster_k8s];
+
+  // legend
+  subgraph cluster_legend {
+    label="legend"; style="filled,rounded"; fillcolor="#161b22"; color="#30363d";
+    fontcolor="#8b949e"; fontsize=10; margin=8;
+    l1 [label="solid = traffic / data path", shape=plaintext, style="", fontcolor="#adbac7"];
+    l2 [label="dashed = control / observe / VPN", shape=plaintext, style="", fontcolor="#adbac7"];
+    l3 [label="dotted = storage volumes", shape=plaintext, style="", fontcolor="#adbac7"];
+    l4 [label="faded/dashed box = optional", shape=plaintext, style="", fontcolor="#adbac7"];
+    l1 -> l2 -> l3 -> l4 [style=invis];
+  }
+}

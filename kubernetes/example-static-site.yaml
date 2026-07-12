@@ -1,0 +1,75 @@
+# Example: deploy a static site to the cluster.
+#
+# This is a generic, self-contained example that demonstrates the deployment
+# pattern described in docs/dns-and-exposure.md: a Deployment + Service +
+# Ingress in one manifest, exposed by hostname on the ingress controller.
+#
+# It uses a stock nginx image serving its default page — replace the image,
+# or mount your own content, to serve something real. No external repository
+# is required.
+#
+# Apply with:  kubectl apply -f example-static-site.yaml
+# Then reach it at the hostname below once DNS/hosts resolves it to the
+# gateway/ingress (see docs/dns-and-exposure.md).
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-site
+  labels: { app: example-site }
+spec:
+  replicas: 2                      # spread across nodes; survives a single node loss
+  selector:
+    matchLabels: { app: example-site }
+  template:
+    metadata:
+      labels: { app: example-site }
+    spec:
+      # Soft anti-affinity: prefer to place replicas on different nodes.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app: example-site }
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests: { cpu: "50m", memory: "32Mi" }
+            limits:   { cpu: "250m", memory: "128Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-site
+spec:
+  selector: { app: example-site }
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-site
+  # annotations:
+  #   For automatic TLS via cert-manager (see docs/dns-and-exposure.md §7):
+  #   cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  rules:
+    - host: example-site.athome.example.com   # change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: example-site
+                port:
+                  number: 80
+  # tls:
+  #   - hosts: [example-site.athome.example.com]
+  #     secretName: example-site-tls
