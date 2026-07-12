@@ -188,8 +188,8 @@ Worst-case simultaneous-peak budget (full 10-bay endgame):
 | Pi 3A+ face node | ~1A | 5 |
 | 7" display | ~0.8A | 4 |
 | LEDs uncapped (~200× WS2812B full white) | 60mA/LED | 60 |
-| 2× 120mm fans | | 4 |
-| **Theoretical max** | | **~197** |
+| 1× 140mm fan (ARCTIC P14 Pro A-RGB) | ~0.2A @12V | 3 |
+| **Theoretical max** | | **~196** |
 
 With the 50% LED brightness cap the realistic ceiling is ~170W. Today's 7-node fleet peaks ~100W. Switch runs on its own supply.
 
@@ -306,7 +306,7 @@ Prices as of July 2026, during the DRAM shortage. A replication should expect th
 | microSD A2 32GB | 6 | $36 |
 | Acrylic (black + smoked) | — | $25 |
 | WS2812B strip + 74AHCT125 | — | $12 |
-| 120mm fans ×2 + filter | — | $12 |
+| 140mm ARCTIC P14 Pro A-RGB fan + filter | 1 | $14 |
 | Keystones, fused IEC inlet, patch cables | — | $18 |
 | **Total (full replication, approximate)** | | **≈ $800** |
 
