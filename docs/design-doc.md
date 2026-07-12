@@ -179,7 +179,7 @@ Driven by **aries-face** (Pi 3A+): DSI → 7" display; USB serial → Arduino Na
 
 **PSU: Meanwell LRS-200-5 (5V / 40A / 200W), ~$33.**
 
-Worst-case simultaneous-peak budget (full 10-bay endgame):
+Worst-case simultaneous-peak budget — a hypothetical fully-populated 10-bay endgame (mostly Pi 5s, two storage nodes), used to size the 200W PSU with headroom. This is a ceiling, **not** the current fleet (§2.2):
 
 | Load | Peak | Watts |
 |---|---|---|
@@ -191,7 +191,7 @@ Worst-case simultaneous-peak budget (full 10-bay endgame):
 | 1× 140mm fan (ARCTIC P14 Pro A-RGB) | ~0.2A @12V | 3 |
 | **Theoretical max** | | **~196** |
 
-With the 50% LED brightness cap the realistic ceiling is ~170W. Today's 7-node fleet peaks ~100W. Switch runs on its own supply.
+With the 50% LED brightness cap the realistic ceiling is ~170W. The current fleet (§2.2) peaks around ~100W. Switch runs on its own supply.
 
 ### 4.2 Distribution
 
