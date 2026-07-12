@@ -66,13 +66,13 @@ Per-node and cluster-state signaling: carrier trace glow, front-panel Aries glyp
 
 State → color (from main doc §3.4): **cyan** Ready · **amber** cordoned/draining · **red pulse** NotReady · **orange sweep** control-plane degraded.
 
-### 3.2 Controller decision — Arduino Nano as serial LED driver (owned)
+### 3.2 Controller decision — Arduino Nano as serial LED driver
 An Arduino Nano (e.g. Elegoo Nano) is the **preferred** Tier-2 controller over driving WS2812s from the Pi directly:
 
 - **Native 5V logic** → drives WS2812 data cleanly with **no 74AHCT125 level shifter** (the Pi's 3.3V data is marginal for WS2812 and normally needs the shifter; the Nano eliminates that part).
 - **Real-time timing** → WS2812 protocol is nanosecond-sensitive; a Linux Pi can glitch under load (preemption), an Arduino never does. Rock-solid color.
 - **Offloads LED work** → face node sends high-level commands ("node 3 = red") over **USB serial**; the Nano runs FastLED and generates the signal.
-- **Owned** → free.
+- **Cheap** → an Arduino Nano (or clone) is a few dollars.
 
 **Architecture:** face node (Pi 3A+) → USB serial → Arduino Nano → WS2812 strips/rings (carriers, glyph, fan ARGB).
 
@@ -112,7 +112,7 @@ The ARCTIC P14 Pro's ARGB connector is a WS2812-style 5V addressable data line (
 | 5V COB ice-blue strip, 1 m | 2 | **owned** | Tier 1 frame glow; cut USB, hard-wire |
 | Amber COB/strip, short | 1 | buy (~$5) | power-bay accent |
 | 2020 LED diffuser channel (optional) | — | buy (~$1–2/edge) | pro even-glow on directly-visible edges |
-| Elegoo Arduino Nano | 2 owned | **owned** | Tier 2 serial LED driver (replaces 74AHCT125) |
+| Arduino Nano (or clone) | 1 | buy (~$4) | Tier 2 serial LED driver (replaces 74AHCT125) |
 | WS2812B addressable strip/rings | — | buy, Tier 2 | carriers, glyph, matrix |
 | Fuse-block circuits | — | existing | 1–2 A each for non-addressable strips |
 

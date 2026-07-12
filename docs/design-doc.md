@@ -163,7 +163,7 @@ The panel and lighting choices below are one implementation's aesthetic; they ar
 
 ### 3.4 Display & LED status subsystem
 
-Driven by **aries-face** (Pi 3A+): DSI → 7" display, GPIO → WS2812B (via 74AHCT125 level shifter), USB → ethernet.
+Driven by **aries-face** (Pi 3A+): DSI → 7" display; USB serial → Arduino Nano → WS2812B status LEDs (the Nano is 5V-native, so no 74AHCT125 level shifter — see `lighting-design.md` §3.2); USB → ethernet.
 
 - **7" kiosk:** Netdata (or custom dashboard) full-screen — the tower's face.
 - **LED daemon** (Python, in repo): polls k3s API every ~5s.
@@ -305,7 +305,7 @@ Prices as of July 2026, during the DRAM shortage. A replication should expect th
 | Blade fuses, XT30 pairs, 18AWG + 10AWG wire | — | $22 |
 | microSD A2 32GB | 6 | $36 |
 | Acrylic (black + smoked) | — | $25 |
-| WS2812B strip + 74AHCT125 | — | $12 |
+| WS2812B addressable strip + Arduino Nano LED driver (no level shifter) | — | $14 |
 | 140mm ARCTIC P14 Pro A-RGB fan + filter | 1 | $14 |
 | Keystones, fused IEC inlet, patch cables | — | $18 |
 | **Total (full replication, approximate)** | | **≈ $800** |
