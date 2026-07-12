@@ -12,7 +12,7 @@ Changelog: v0.2 — added Concept C rod-and-bead swing rack (lead), demoted pill
 |---|---|---|
 | R1 | Tool-free insert/remove of any node (power unplugged first — cold-swap mechanically, drain-first at cluster level) | live-surgery goal |
 | R2 | Every connector that gets pushed/pulled (ethernet, XT30, SD) sits adjacent to a supported mount point | PCB flex rule |
-| R3 | Storage node (Pi 5 + X1001, 3-hole HAT) mounts in the same system, claiming a double-pitch bay | main doc §3.1 |
+| R3 | Storage node (Pi 5 + X1001, 3-hole HAT) mounts in the same system, in an extended-pitch (42 mm) bay | main doc §3.1 |
 | R4 | Retention mechanism is a replaceable wear part — worn parts swap without rebuilding the rack | 50-cycle problem |
 | R5 | Boards visible as display objects; mounting hardware minimal or concealed | aesthetics (optional) |
 | R6 | Cable routing is designed, not incidental — for serviceability and strain management | serviceability |
@@ -46,10 +46,10 @@ Four vertical **1/4" (6.35mm) smooth stainless rods** between top and bottom pla
 Rear pair and front-left are **bridged** bead stacks (printed bridges between adjacent stacks) for rigidity; front-right stays independent, keeping two faces of the rack open for access. Unlatch rear-right → carrier swings out the front-right opening → board inspectable **with cables still attached**. This is the property no slide-in shelf has.
 
 **Bead system:**
-- Standard bead: sets 35mm pitch, keyed to neighbors by interlocking tabs; bottom bead keys into the base plate → whole stack inherits orientation (round rods can't key themselves).
+- Standard (compute) bead: sets the **30 mm** compute pitch, keyed to neighbors by interlocking tabs; bottom bead keys into the base plate → whole stack inherits orientation (round rods can't key themselves).
 - **Anchor beads:** special beads with tabs/T-nut bosses bolting the cartridge to the 2020 frame at mid-heights — attachment and rod anti-bowing brace in one part.
 - Other special beads as needed: cable-comb beads, LED-strip beads, button-mount beads (R8 lives here — the bead is the expansion slot).
-- Storage bay: one 70mm bead instead of two 35mm (R3).
+- Extended bead: sets the **42 mm** extended pitch for the tall rack — nodes with a vertical HAT, such as the Pi 5 + NVMe storage stack (R3). Two pitches → two bead sizes; each rack cartridge uses one size throughout (architecture.md §6).
 
 **Tolerance & preload (the failure mode to engineer against):** all-smooth rods mean pitch is set purely by the bead stack — printed height error accumulates. Countermeasures: print each rod's beads in one batch (same profile, same squish); design the **topmost bead as compliant** (printed wave-spring profile, or an O-ring under the top plate) so plate clamping preloads the stack solid regardless of ±0.5mm accumulated error; carriers get ±1mm vertical compliance at the latch.
 
@@ -59,7 +59,7 @@ Rear pair and front-left are **bridged** bead stacks (printed bridges between ad
 
 **Known geometry risks (test before committing the fleet):**
 1. Swing arc: rear-right corner sweeps the largest radius — must clear rear-left rod + beads. Sets minimum rod spacing vs carrier depth. Cardboard/scrap-print mockup first.
-2. Hand clearance: reaching the rear-right latch between bays at 35mm pitch. Escape hatch: front-actuated pushrod along the carrier edge.
+2. Hand clearance: reaching the rear-right latch between bays at the 30 mm compute pitch. Escape hatch: front-actuated pushrod along the carrier edge.
 3. Bead bore fit on 6.35mm rod: coupon-test printed bore (start 6.5mm, ream to slip fit); pivot bores on carriers likewise.
 
 ## 5. Decision
@@ -107,7 +107,7 @@ One recessed momentary button per bay, mounted on the rack (button-mount bead), 
 
 1. Measure: Pi 5 + X1001 stack height w/ standoffs; SD slot clearance vs carrier plane; XT30 pigtail exit; J2 header position on Pi 5.
 2. Swing-arc check: rod spacing vs carrier depth so rear-right corner clears rear-left stack (mockup first — this can kill the concept).
-3. Hand/latch clearance at 35mm pitch; pushrod fallback geometry if cramped.
+3. Hand/latch clearance at the 30 mm compute pitch; pushrod fallback geometry if cramped.
 4. Bead bore + carrier pivot bore fit on 6.35mm rod — coupon 6.4/6.5/6.6mm.
 5. Bead stack tolerance: measure a 10-bead batch stack height; size the compliant top bead accordingly.
 6. Detent engagement depth for PETG finger — coupon 0.3/0.4/0.6mm.

@@ -62,7 +62,7 @@ Use **PETG**, not PLA, for the printed carrier:
 | `carrier-holder.stl` | `[PRINT]` | Printable holder (PETG) with integrated standoff bosses and vent — the print route, no separate spacers needed. |
 | `carrier-holder-source.svg` | source | The 2D source profile the holder was modeled from. |
 
-Note: these are current working files, not final released parts. Bay-pitch and interface dimensions are pending caliper confirmation (see the rack design doc). A dimensioned reference drawing will be added as the design is finalized.
+Note: these are current working files, not final released parts. The bay pitches are set at 30 mm (standard) / 42 mm (extended); interface dimensions are pending caliper confirmation against assembled hardware (see the rack design doc). A dimensioned reference drawing will be added as the design is finalized.
 
 Board variants (different hole patterns) are named by board, e.g. `carrier-rpi5.*`, `carrier-rpi4.*` — identical rack interface, different mounting holes.
 

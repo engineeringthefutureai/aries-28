@@ -69,8 +69,8 @@ The system is split vertically into decks. Heavy, static infrastructure low; rec
 
 Racks are independent cartridges, each at a single bay pitch, sized to a **class** of node. Interchangeability is guaranteed *within* a class, not forced *across* classes — which is what lets different node shapes coexist without a single compromise pitch.
 
-- **Compute rack — dense pitch (~30 mm, pending caliper confirmation):** bare/diskless nodes (compute + network only). Most of the fleet. Tight because there is nothing stacked to heat-soak; the small gap is adequate airflow for a cooled bare board.
-- **Expansion rack — tall pitch (~40–42 mm, pending caliper confirmation):** nodes with vertical accessories — NVMe storage HATs, AI accelerators, or future add-ons. Fewer bays, generous height each (which also means generous airflow). Sized from the current ~34 mm Pi-5-plus-SSD stack plus headroom for taller HATs and future options.
+- **Compute rack — dense pitch (30 mm):** bare/diskless nodes (compute + network only). Most of the fleet. Tight because there is nothing stacked to heat-soak; the small gap is adequate airflow for a cooled bare board.
+- **Expansion rack — tall pitch (42 mm):** nodes with vertical accessories — NVMe storage HATs, AI accelerators, or future add-ons. Fewer bays, generous height each (which also means generous airflow). Sized from the current ~34 mm Pi-5-plus-SSD stack plus headroom for taller HATs and future options.
 
 Two pitches means two bead sizes (rod-and-bead rack) — a one-time design cost, not a per-change one. Each rack remains an independently-assemblable cartridge: build and wire it on the bench, drop it into its deck as a unit, and reconfigure it later without disturbing its neighbors.
 

@@ -71,7 +71,7 @@ Why the face node is outside the cluster: the monitor must survive what it monit
 
 k3s servers run workloads by default — there are no dedicated "dead weight" masters. The HA tax is only ~600–900MB of RAM per server for k3s + etcd.
 
-**Phase 1:** single server (cp-1) + agents. **Phase 3+:** migrate to 3-server embedded-etcd HA (k3s supports `--cluster-init` migration). etcd requires majority quorum: 1 server = SPOF, 2 = worse than 1, 3 = any single node can be pulled live. The "yank a control-plane sled while Nextcloud keeps serving" demo is the graduation exam.
+**Phase 1:** single server (cp-1) + agents. **Phase 3+:** migrate to 3-server embedded-etcd HA (k3s supports `--cluster-init` migration). etcd requires majority quorum: 1 server = SPOF, 2 = worse than 1, 3 = any single node can be pulled live. The "yank a control-plane carrier while Nextcloud keeps serving" demo is the graduation exam.
 
 ---
 
@@ -84,7 +84,7 @@ Stock: **10× 600mm black anodized 2020** (VEVOR kit, ~$42).
 Cut plan (minimizes cuts, keeps compactness):
 - **4× verticals @ 450mm** (cut 4 pieces; 150mm offcuts become internal rail supports)
 - **4× width horizontals @ 250mm** and **4× depth horizontals @ 350mm** (cut 4 pieces into 250+350 each — zero waste)
-- **2 spare full-length pieces** for mid-height sled rails / shelf supports / mistakes
+- **2 spare full-length pieces** for mid-height rack supports / shelf supports / mistakes
 
 Resulting envelope ≈ **450 (H) × 290 (W) × 390 (D) mm external** (250/350 inner rails + 2020 profile) — a compact mid-tower, roughly half the volume of the 600mm no-cut option. Printed corner brackets or cast corner cubes; T-nuts throughout.
 
@@ -92,21 +92,23 @@ Cutting notes: miter saw with non-ferrous blade or fine-tooth hacksaw + miter bo
 
 Three zones, bottom to top:
 1. **Power bay** (bottom): LRS-200-5, AC inlet, 12-circuit fuse block, ground bus. Heavy stuff low.
-2. **Node bays** (middle): 10 vertical sled slots on printed rails, ~35mm pitch. Storage sleds (Pi 5 + top-mounted X1001 NVMe adapter) occupy a **double-pitch bay (~70mm)** — big node, big bay.
-3. **Network shelf** (top): 8-port managed switch (second 8-port cascades here at expansion), patch cables dropping to sleds.
+2. **Node bays** (middle): carrier bays in rod-and-bead rack cartridges (see `rack-design.md`) at **two pitches** — a **30 mm compute pitch** for bare/diskless nodes (most of the fleet) and a **42 mm extended pitch** for nodes with a vertical accessory. The storage carrier (Pi 5 + top-mounted X1001 NVMe adapter) lives in a 42 mm extended bay. See `architecture.md` §6 for the two-pitch rationale.
+3. **Network shelf** (top): 8-port managed switch (second 8-port cascades here at expansion), patch cables dropping to carriers.
 
 Front face reserves a cutout for the 7" display (portrait or landscape — decide in CAD before cutting acrylic). Panel/airflow/thermal/mounting details in §3.3.
 
-### 3.2 Sled specification (the standard interface)
+### 3.2 Carrier specification (the standard interface)
 
-**Standardize the sled, not the board.** Fixed spec: outer geometry, rail engagement, XT30 pigtail position, handle. Per-board variants change only the mounting boss pattern:
-- `sled-rpi-b.stl` — Pi 3B/4B/5 (85×56mm, M2.5 holes on 58×49mm — stable for a decade)
-- `sled-rpi-a.stl` — Pi 3A+ (65×56mm, same hole spacing pattern, shorter)
-- extensible: `sled-<board>.stl` for any additional board type, added as needed
+**Standardize the carrier, not the board.** Fixed spec: outer geometry, rack-interface (rod/bead) engagement, XT30 pigtail position, handle. Per-board variants change only the mounting-hole pattern:
+- `carrier-rpi-b.*` — Pi 3B / 4B / 5 (shared 85×56mm footprint, M2.5 holes on 58×49mm — one carrier fits all three B-series generations)
+- `carrier-rpi-a.*` — Pi 3A+ (65×56mm, same hole spacing, shorter)
+- extensible: `carrier-<board>.*` for any additional board type, added as needed
+
+File naming and per-board detail are authoritative in [`hardware/carrier/`](../hardware/carrier/); see also `rack-design.md` for the mounting mechanism.
 
 Details: PETG body, M3/M2.5 brass inserts, XT30 keyed power pigtail, labeled slim patch cable, node name laser-engraved on handle. Blank engraved covers for empty bays.
 
-**Hot-surgery procedure:** `kubectl drain <node> --ignore-daemonsets` → LED trace amber → unplug XT30 + ethernet → pull sled. Reverse; `kubectl uncordon`.
+**Hot-surgery procedure:** `kubectl drain <node> --ignore-daemonsets` → LED trace amber → unplug XT30 + ethernet → pull carrier. Reverse; `kubectl uncordon`.
 
 ### 3.3 Panels & enclosure styling (optional aesthetic layer)
 
@@ -149,13 +151,13 @@ The panel and lighting choices below are one implementation's aesthetic; they ar
 
 ### 3.3.2 Board & PSU mounting
 
-- **Boards sit on 3mm spacers** cut from the owned black acrylic, on top of the sleds/carriers (lifts the board off the carrier for airflow and connector clearance). Spacers cut on the laser from the same black stock as the solid panels.
+- **Boards sit on 3mm spacers** cut from the owned black acrylic, on top of the carriers (lifts the board off the carrier for airflow and connector clearance). Spacers cut on the laser from the same black stock as the solid panels.
 - **PSU on spacers** (standoffs) rather than flush — a small air gap under the Meanwell for convection and to keep conducted heat out of the bottom panel. (Mounting the PSU directly to the aluminum frame as a heatsink is thermally ideal but mechanically fiddly; spacers are the pragmatic choice — overengineering the frame mount isn't worth it.)
 
 ### 3.3.3 Fabrication: buy vs. print, and materials
 
 - **Buy (must be strong + square):** 8× metal corner brackets or cast corner connectors (~$15) + a bag of 50+ M5 T-nuts and button-head screws (~$10). Printed corners flex and let the frame rack out of square; metal holds 90°. Frame squareness also depends on accurate cuts (miter saw, non-ferrous blade).
-- **Print in PETG (custom-shaped, load-bearing, or near heat):** sleds/carriers, panel retainer clips, cable combs, LED/fan mounts, connection-panel bezel, feet, PSU spacers, vent bezels.
+- **Print in PETG (custom-shaped, load-bearing, or near heat):** carriers, panel retainer clips, cable combs, LED/fan mounts, connection-panel bezel, feet, PSU spacers, vent bezels.
 - **Why PETG not PLA:** PLA softens ~50–60°C (creeps near the PSU / on a hot shed day) and is brittle (latch fingers crack). PETG handles ~80°C and flexes before failing — required for the latch-flex features and anything near the power bay. Print PETG on the K1 (handles it easily); PLA is fine only for cheap test-fit mockups before committing the real PETG part.
 - **PETG first-time settings (starting point):** nozzle 230–250°C, bed 70–85°C, slower (~40–50mm/s), higher retraction than PLA to fight stringing; use a release barrier on the bed (PETG sticks aggressively). Expect some stringing — tune retraction, heat-gun residual wisps.
 
@@ -200,8 +202,8 @@ At 5V, worst-case full-build current approaches ~40A (≈197W ÷ 5V), so voltage
   - Worker/cp/gateway circuits: **4A blade fuses**
   - Storage-node circuits: **5A** (Pi 5 + NVMe peaks ~4A)
   - Face node + LED circuit: 5A
-- **Sled leads:** 18AWG silicone, short as practical, XT30 terminated.
-- **Voltage calibration:** with the fleet under `stress-ng` and LEDs at capped maximum, measure voltage at a sled XT30 and trim the PSU V-ADJ pot to compensate distribution drop (Pi boards warn below ~4.8V). **Verify at both load extremes:** trimming the loaded voltage up reduces the drop margin at idle, so the idle sled voltage rises — confirm it stays within the Pi's 5V ±5% window (4.75–5.25V) at both idle and full load rather than over-trimming for the loaded case alone. Perform this once at commissioning and after any wiring change. Correct calibration is the difference between stable operation and intermittent SD/undervoltage faults.
+- **Carrier leads:** 18AWG silicone, short as practical, XT30 terminated.
+- **Voltage calibration:** with the fleet under `stress-ng` and LEDs at capped maximum, measure voltage at a carrier XT30 and trim the PSU V-ADJ pot to compensate distribution drop (Pi boards warn below ~4.8V). **Verify at both load extremes:** trimming the loaded voltage up reduces the drop margin at idle, so the idle carrier voltage rises — confirm it stays within the Pi's 5V ±5% window (4.75–5.25V) at both idle and full load rather than over-trimming for the loaded case alone. Perform this once at commissioning and after any wiring change. Correct calibration is the difference between stable operation and intermittent SD/undervoltage faults.
 - **Pi 5 note:** on 5V fused rails (no PD negotiation) the Pi 5 caps USB port output — irrelevant headless. Add `usb_max_current_enable=1` only if a USB device is attached.
 - **AC side:** inlet → fuse → PSU only; heatshrink, strain relief, physical separation from the DC bay. If unsure, use a pre-wired fused IEC module.
 - **Bench station:** a low-power multi-port USB supply (inadequate for the assembled tower) is sufficient for flashing and first-boot on the bench.
@@ -229,7 +231,7 @@ Single front-panel control for orderly fleet shutdown. No battery, no always-on 
 **Shutdown sequence:** toggle off → sense GPIO drops → display: SHUTDOWN SEQUENCE INITIATED, LED panel winks nodes out one by one → drain + `shutdown -h` in reverse dependency order (workers → storage → cp → gateway) → face node watches ethernet links go dark → halts itself → GPIO falls → SSR opens → silence.
 
 **Power hierarchy:** toggle = soft off · IEC rocker = hard kill (upstream of everything).
-**Known edge case:** face sled pulled or face node down → soft-off silently degrades to hard-off (SSR already open; toggle-off cuts instantly). LED panel must show a warning state whenever the face node is absent.
+**Known edge case:** face carrier pulled or face node down → soft-off silently degrades to hard-off (SSR already open; toggle-off cuts instantly). LED panel must show a warning state whenever the face node is absent.
 **Day-one accommodations:** DPST toggle + SSR footprint in the power bay; one fuse-block circuit reserved; note that a halted Pi still draws power — `shutdown -h` makes filesystems safe but only the SSR actually de-energizes the tower.
 
 
@@ -323,8 +325,8 @@ Context for readers: this BOM is priced during the 2026 DRAM shortage, when 4GB+
 ## 8. Build Phases
 
 1. **Bench cluster (now — boards in transit):** repo skeleton, Ansible base role, k3s single-server on any owned board via the bench USB supply. *Prove software before cutting metal.*
-2. **Frame & power:** cut extrusion per §3.1, power bay, fused distribution. Load-test: full fleet `stress-ng`, calibrate V-ADJ to 5.1V at the sleds.
-3. **Full integration:** all sleds racked, gateway routing live, switch in, panels cut. **Control-plane quorum:** cp-2/cp-3 join, single-node kill-test.
+2. **Frame & power:** cut extrusion per §3.1, power bay, fused distribution. Load-test: full fleet `stress-ng`, calibrate V-ADJ to 5.1V at the carriers.
+3. **Full integration:** all carriers racked, gateway routing live, switch in, panels cut. **Control-plane quorum:** cp-2/cp-3 join, single-node kill-test.
 4. **Cloud layer:** Longhorn, Nextcloud/MinIO, WireGuard, Flux takeover. Stretch: Pi-native netboot from gateway (kills SD dependence for workers).
 5. **Light show:** LED daemon v1 (status), 7" kiosk, then the CPU-matrix bonus.
 6. **Soft power:** DPST toggle + SSR self-holding circuit, shutdown choreography on display + LEDs, abort-on-retoggle. (§4.4)
@@ -347,7 +349,7 @@ The control-plane quorum (three server nodes with embedded etcd) protects agains
 
 ### 9.2 Component failure behavior
 
-- **Any single node dies (post-Phase 3):** the cluster continues; workloads reschedule. Pull sled, reflash, Ansible, rejoin.
+- **Any single node dies (post-Phase 3):** the cluster continues; workloads reschedule. Pull carrier, reflash, Ansible, rejoin.
 - **Gateway dies:** the cluster runs internally; external access and DNS stop (SPOF, §9.1). Reflash + `gateway.yml`; a spare flashed SD kept inside the case shortens recovery.
 - **Switch dies:** entire cluster offline until replaced (SPOF, §9.1). Identical spare switch shortens recovery.
 - **Face node dies:** cluster unaffected; the status display and LEDs stop, and soft-off degrades to hard-off (toggle-off cuts power directly). A LED warning state covers this.

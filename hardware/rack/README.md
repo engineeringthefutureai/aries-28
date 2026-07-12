@@ -9,7 +9,7 @@ An independently-assemblable cartridge of bays at a single pitch, into which car
 See the fabrication legend in [`../README.md`](../README.md) for method tags and material notes (PETG vs. PLA, acrylic, buy-vs-fabricate).
 
 ## Status
-In progress. An STL is present (`rack.stl`); the two bay pitches (~30 mm dense, ~40–42 mm expansion) are pending caliper confirmation against assembled hardware. See `docs/rack-design.md`.
+In progress. An STL is present (`rack.stl`); the two bay pitches are set — 30 mm (dense/compute) and 42 mm (extended/expansion). Final interface fit is pending caliper confirmation against assembled hardware. See `docs/rack-design.md`.
 
 ## Dependencies
 - Carrier — defines the rack-facing interface (rod/bead or slide).
