@@ -185,15 +185,14 @@ Internet exposure is the final phase by design: it is added once the build is co
 
 ---
 
-## 9. Addressing — DHCP reservations
+## 9. Addressing — static gateway, reserved servers, dynamic agents
 
-Name resolution depends on stable addresses. The chosen approach is **DHCP with reservations** served by the gateway (dnsmasq), rather than per-node static configuration:
+Name resolution depends on addresses being *knowable*, not on every address being fixed. The scheme pins only what must be pinned and lets the rest float, all managed by DHCP on the gateway (dnsmasq):
 
-- Nodes run standard DHCP with no per-node network configuration; a reimaged node boots with its correct address automatically.
-- The gateway assigns each node's MAC address a designated fixed IP (`aries-cp-1` → `10.28.0.11`, and so on) — a single central MAC-to-IP map, held in the gateway configuration and in Ansible.
-- Addresses are stable, which satisfies k3s's requirement for consistent node IPs; the TLS-SAN behavior is unaffected, as reserved addresses are equivalent to static ones.
-- A dynamic pool (`10.28.0.100+`) serves transient devices (such as a laptop on the MAINT port) without configuration.
-- dnsmasq provides both DHCP and DNS from one lightweight daemon, so internal name resolution — where used — is served by the same component.
+- **Gateway — static `10.28.0.1`.** It routes the subnet and runs the DHCP/DNS server, so it cannot lease its own address; it is configured statically.
+- **Control-plane servers — DHCP reservations (`10.28.0.11–.13`).** Each server's MAC is pinned to a fixed IP in the gateway config (mirrored in Ansible). Their IPs must be stable because embedded etcd's peer URLs and the API-server TLS certificate bind to the node IP — a changing lease would break quorum or cert validation. The reservation delivers that stability while the node itself stays config-free (a plain DHCP client).
+- **Everything else — dynamic pool (`10.28.0.100+`).** Agents (storage, workers), the face node, and transient devices (a laptop on MAINT) take pool addresses with no per-node configuration. They are reached by their `*.aries.lan` names rather than a fixed IP: dnsmasq registers each DHCP lease into DNS automatically, so `aries-st-1.aries.lan` always resolves to the node's current address. Agents join the cluster through the servers' stable addresses, so their own IP changing is harmless.
+- dnsmasq provides both DHCP and DNS from one lightweight daemon, so leasing and internal name resolution are served by the same component.
 
 The gateway's Aries-internal IP (`10.28.0.1`) is its address on the cluster subnet. The `*.athome…` wildcard record instead targets the gateway's **home-LAN-side** address (§6.2), which is the interface home devices route to.
 

@@ -47,7 +47,7 @@ Internet / Home LAN
    └─ servers+workers ─┘      └ LED/kiosk, outside k3s
 ```
 
-- **Subnet:** `10.28.0.0/24`. Gateway `.1`, static leases `.11–.19` for nodes, `.100+` DHCP pool for maintenance.
+- **Subnet:** `10.28.0.0/24`. Gateway static `.1`; control-plane reservations `.11–.13`; `.100+` dynamic pool for all other nodes and maintenance devices (agents named via `*.aries.lan` DNS). See `network-design.md` §4.
 - **Naming:** `aries-gw`, `aries-cp-1..3`, `aries-wk-*`, `aries-st-*`, `aries-face`.
 - **Ingress:** all external traffic via gateway; port-forward or WireGuard only. Cluster invisible to home LAN by default.
 - **DNS:** dnsmasq on the gateway resolves internal names on the cluster subnet — `*.aries.lan` (nodes by hostname; services via the ingress). Home-LAN and internet access use separate naming scopes (`*.athome.example.com` and the public domain) — see `dns-and-exposure.md` §1.1.

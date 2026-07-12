@@ -20,10 +20,11 @@ reproducible rather than hand-configured:
 
 ## Addressing
 
-Node addressing uses DHCP reservations served by the gateway (see
-[`../docs/dns-and-exposure.md`](../docs/dns-and-exposure.md) §9); the MAC→IP
-map lives in the gateway configuration and is mirrored in the Ansible
-inventory.
+Node addressing is hybrid (see
+[`../docs/dns-and-exposure.md`](../docs/dns-and-exposure.md) §9): the gateway is
+static, the control-plane servers use DHCP reservations, and all other nodes are
+dynamic. The reservation MAC→IP map lives in the gateway configuration and is
+mirrored in the Ansible inventory.
 
 ## Security
 

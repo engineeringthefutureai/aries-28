@@ -9,7 +9,7 @@ Version 1.0 — July 2026
 
 - **One cable in.** The entire box connects to the outside world through a single Ethernet uplink. Everything inside lives on a private, isolated, **wired-only** network. This makes the box portable (plug it into any network and the internals never change) and self-contained.
 - **Wired only, no Wi-Fi inside.** Internal cluster traffic — especially etcd — is latency- and jitter-sensitive; Wi-Fi is neither stable nor appropriate. Every node reaches the internal switch by cable. (The one board without built-in Ethernet, the Pi 3A+ face node, uses a USB-to-Ethernet adapter rather than falling back to Wi-Fi.)
-- **Static addressing, no internal DNS server.** A fixed, small fleet doesn't need DHCP/DNS overhead. Static IPs are the name resolution — the inventory maps role-names to addresses. (See §4.)
+- **Static gateway, reserved control plane, dynamic rest.** The gateway is statically addressed (`.1`) — it routes the subnet and runs DHCP/DNS, so it cannot lease itself. The three k3s **control-plane servers get DHCP reservations** (stable IPs, since embedded etcd and the API-server TLS cert bind to the node IP). Storage, workers, the face node, and transient devices take **dynamic pool addresses** and are identified by their `*.aries.lan` DNS names, not by a fixed IP. No node but the gateway carries a hand-set static address. (See §4.)
 - **The cluster is a logical layer above the physical box.** Kubernetes doesn't care which enclosure a node sits in; this is what makes multi-box scaling trivial (see §6).
 
 ---
@@ -80,8 +80,8 @@ Responsibilities:
 
 ## 4. Addressing
 
-- **Subnet:** `10.28.0.0/24` (the "28" on theme). Gateway `.1`; static node leases `.11–.19`; DHCP pool `.100+` for transient maintenance devices.
-- **Static IPs, IPv4.** Decided deliberately: a fixed fleet uses static addresses as its naming, captured in the Ansible inventory. No DNS server required for the cluster to function.
+- **Subnet:** `10.28.0.0/24` (the "28" on theme). Gateway **static** `.1`; control-plane reservations `.11–.13`; dynamic pool `.100+` for every other node and for transient devices.
+- **Static gateway, reserved servers, dynamic agents (IPv4).** The gateway is fixed (`.1`) because it serves DHCP/DNS and routes the subnet. The three control-plane servers get **MAC reservations** so their IPs never move — embedded etcd peer URLs and the API-server TLS SAN are bound to the node IP, and a lease change would break quorum or cert validation. Agents (storage, workers), the face node, and transient devices run **plain dynamic DHCP**: they register to the servers' stable addresses and are reached by their `*.aries.lan` DNS names (dnsmasq registers each lease into DNS automatically), so their own IPs may change freely. See `dns-and-exposure.md` §9.
 - **Connect by IP, name by hostname.** k3s names nodes by *hostname* (set per node: `aries-cp-1`, `aries-st-1`, …) but nodes *connect* to each other by *IP*. This avoids a certificate mismatch: the k3s server's TLS certificate covers its IP by default, not arbitrary hostnames, so joining by hostname fails TLS validation unless the certificate is issued with `--tls-san <hostname>`. Agents and servers should join by IP unless a deliberate DNS + TLS-SAN scheme is configured.
 - **IPv6:** an optional extension (link-local requires no configuration; ULAs `fd00::/8` provide stable addresses), but k3s IPv6/dual-stack is less widely deployed. IPv4 is the base for a lower-risk bring-up; IPv6 is an optional later addition, not a requirement.
 
