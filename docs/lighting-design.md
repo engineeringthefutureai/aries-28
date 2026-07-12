@@ -109,7 +109,7 @@ The ARCTIC P14 Pro's ARGB connector is a WS2812-style 5V addressable data line (
 
 | Item | Qty | Source | Notes |
 |---|---|---|---|
-| 5V COB ice-blue strip, 1 m | 2 | **owned** | Tier 1 frame glow; cut USB, hard-wire |
+| 5V COB ice-blue strip, 1 m | 2 | buy (~$8) | Tier 1 frame glow; cut USB, hard-wire |
 | Amber COB/strip, short | 1 | buy (~$5) | power-bay accent |
 | 2020 LED diffuser channel (optional) | — | buy (~$1–2/edge) | pro even-glow on directly-visible edges |
 | Arduino Nano (or clone) | 1 | buy (~$4) | Tier 2 serial LED driver (replaces 74AHCT125) |

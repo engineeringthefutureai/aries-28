@@ -56,14 +56,14 @@ Internet / Home LAN
 
 ### 2.2 Fleet
 
-| Node | Board | Role | RAM need | Storage | Source |
-|---|---|---|---|---|---|
-| aries-gw | Pi 4 1GB | Router, DHCP, DNS, WireGuard, netboot (Ph.4) | ~512MB | microSD | owned |
-| aries-cp-1..3 | Pi 5 2GB | k3s server **and** worker (servers schedule pods) | ~2GB | microSD | ordered |
-| aries-st-1 | **Pi 5 4GB** | k3s agent, storage-labeled; Longhorn, Nextcloud/MinIO | 4GB | **NVMe 512GB–1TB** | — |
-| aries-wk-1 | Pi 4 1GB *(pending autopsy)* | light worker | 1GB | microSD | owned/bonus |
-| aries-face | Pi 3A+ + USB-ethernet | LED daemon + 7" kiosk dashboard — outside k3s | 512MB | microSD | owned + $10 |
-| bays 8–10 | empty, engraved covers | expansion | — | — | 2028's problem |
+| Node | Board | Role | RAM need | Storage |
+|---|---|---|---|---|
+| aries-gw | Pi 4 1GB | Router, DHCP, DNS, WireGuard, netboot (Ph.4) | ~512MB | microSD |
+| aries-cp-1..3 | Pi 5 2GB | k3s server **and** worker (servers schedule pods) | ~2GB | microSD |
+| aries-st-1 | **Pi 5 4GB** | k3s agent, storage-labeled; Longhorn, Nextcloud/MinIO | 4GB | **NVMe 512GB–1TB** |
+| aries-wk-1 | Pi 4 1GB *(pending autopsy)* | light worker | 1GB | microSD |
+| aries-face | Pi 3A+ + USB-ethernet | LED daemon + 7" kiosk dashboard — outside k3s | 512MB | microSD |
+| bays 8–10 | empty, engraved covers | expansion | — | — |
 
 Why the face node is outside the cluster: the monitor must survive what it monitors. It polls the k3s API over wired ethernet (USB 2.0 adapter, ~300Mbps — irrelevant for API polls and pixels).
 
@@ -134,7 +134,7 @@ The panel and lighting choices below are one implementation's aesthetic; they ar
 - Alternative for an inset look: printed PETG adapter frames (6mm outer to fill the slot, lip + foam tape holding the 3mm pane).
 - Gasket/weatherstrip tape (≈1.5mm each side) is the quick legitimate fallback to snug 3mm in a slot and damp fan vibration.
 - **At least the front (or left) panel must be removable or hinged** (magnets or printed hinge), so a board can be reached without disassembling the enclosure.
-- Owned black 3mm 12×16 panels → back, bottom (and cut down as needed). Buy smoked 3mm for front + left + right show faces.
+- Black 3mm → back and bottom; smoked 3mm → front, left, and right show faces (cut to size).
 
 **Front panel engraving (brand mark).** Large Aries ram glyph (♈, the validated SVG from the carrier work) engraved on the **back face** of the smoked front panel, centered, with cyan circuit-traces radiating outward; LED strip along the panel edge edge-lights the engraving so it glows while the rest stays dark. Motif repeats at three scales: big glyph on the front (logo) · astrometric Aries constellation as a secondary detail (signature) · tiny ram per carrier (texture). 7" display integrated into the trace artwork.
 
@@ -151,7 +151,7 @@ The panel and lighting choices below are one implementation's aesthetic; they ar
 
 ### 3.3.2 Board & PSU mounting
 
-- **Boards sit on 3mm spacers** cut from the owned black acrylic, on top of the carriers (lifts the board off the carrier for airflow and connector clearance). Spacers cut on the laser from the same black stock as the solid panels.
+- **Boards sit on 3mm spacers** cut from black 3mm acrylic, on top of the carriers (lifts the board off the carrier for airflow and connector clearance). Spacers cut on the laser from the same black stock as the solid panels.
 - **PSU on spacers** (standoffs) rather than flush — a small air gap under the Meanwell for convection and to keep conducted heat out of the bottom panel. (Mounting the PSU directly to the aluminum frame as a heatsink is thermally ideal but mechanically fiddly; spacers are the pragmatic choice — overengineering the frame mount isn't worth it.)
 
 ### 3.3.3 Fabrication: buy vs. print, and materials
@@ -324,7 +324,7 @@ Context for readers: this BOM is priced during the 2026 DRAM shortage, when 4GB+
 
 ## 8. Build Phases
 
-1. **Bench cluster (now — boards in transit):** repo skeleton, Ansible base role, k3s single-server on any owned board via the bench USB supply. *Prove software before cutting metal.*
+1. **Bench cluster (now — boards in transit):** repo skeleton, Ansible base role, k3s single-server on any spare board via the bench USB supply. *Prove software before cutting metal.*
 2. **Frame & power:** cut extrusion per §3.1, power bay, fused distribution. Load-test: full fleet `stress-ng`, calibrate V-ADJ to 5.1V at the carriers.
 3. **Full integration:** all carriers racked, gateway routing live, switch in, panels cut. **Control-plane quorum:** cp-2/cp-3 join, single-node kill-test.
 4. **Cloud layer:** Longhorn, Nextcloud/MinIO, WireGuard, Flux takeover. Stretch: Pi-native netboot from gateway (kills SD dependence for workers).
