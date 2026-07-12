@@ -60,7 +60,7 @@ Internet / Home LAN
 |---|---|---|---|---|
 | aries-gw | Pi 4 1GB | Router, DHCP, DNS, WireGuard, netboot (Ph.4) | ~512MB | microSD |
 | aries-cp-1..3 | Pi 5 2GB | k3s server **and** worker (servers schedule pods) | ~2GB | microSD |
-| aries-st-1 | **Pi 5 4GB** | k3s agent, storage-labeled; Longhorn, Nextcloud/MinIO | 4GB | **NVMe 512GB–1TB** |
+| aries-st-1 | **Pi 5 4GB** | k3s agent, storage-labeled; Longhorn, Nextcloud/MinIO | 4GB | **NVMe 256GB** (1TB-class upgrade later) |
 | aries-wk-1 | Pi 4 1GB *(pending autopsy)* | light worker | 1GB | microSD |
 | aries-face | Pi 3A+ + USB-ethernet | LED daemon + 7" kiosk dashboard — outside k3s | 512MB | microSD |
 | bays 8–10 | empty, engraved covers | expansion | — | — |
