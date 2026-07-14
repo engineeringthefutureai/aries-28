@@ -64,7 +64,7 @@ Use **PETG**, not PLA, for the printed carrier:
 
 Note: these are current working files, not final released parts. The bay pitches are set at 30 mm (standard) / 42 mm (extended); interface dimensions are pending caliper confirmation against assembled hardware (see the rack design doc). A dimensioned reference drawing will be added as the design is finalized.
 
-Board variants (different hole patterns) are named by board, e.g. `carrier-rpi5.*`, `carrier-rpi4.*` — identical rack interface, different mounting holes.
+Board variants (different hole patterns) are named by board class, e.g. `carrier-rpi-b.*` (Pi 3B / 4B / 5 — one variant covers all three shared-footprint B-series generations) and `carrier-rpi-a.*` (Pi 3A+) — identical rack interface, different mounting holes. See `docs/design-doc.md` §3.2 for the naming scheme.
 
 ---
 

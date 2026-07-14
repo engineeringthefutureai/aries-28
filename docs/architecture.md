@@ -60,10 +60,11 @@ As long as each interface is held constant, the internals of any level are free 
 
 ## 5. The deck layer (current plan)
 
-The system is split vertically into decks. Heavy, static infrastructure low; reconfigurable compute above.
+The system is split vertically into zones. Heavy, static power infrastructure low; reconfigurable compute in the middle; network switching high, so patch cables drop down to the carriers below — matching each element's role to its tier.
 
-- **Facilities deck (bottom, full footprint):** PSU, fuse block / distribution, network switch(es) — one now, a second cascaded later — and room for optional additional facilities nodes (gateway, self-hosted registry). This is the "power + network core," analogous to a data center's power and top-of-rack networking. Kept low for stability and serviceability; displayed as a feature through the panels.
-- **Compute deck(s) (above):** one or more rack cartridges.
+- **Power deck (bottom, full footprint):** PSU, fuse block / distribution, ground bus. Kept low for stability and serviceability; displayed as a feature through the panels.
+- **Compute deck(s) (middle):** one or more rack cartridges — the node bays, which also hold facilities-role boards that occupy a bay like any other node (e.g. the gateway), even though such a board's *software* role sits outside k3s.
+- **Network deck (top):** switch(es) — one now, a second and third cascaded later — the "top-of-rack" analog, patch cables dropping to the carriers below. Room for an optional additional facilities node (e.g. a self-hosted registry).
 
 ## 6. The rack layer (current plan)
 

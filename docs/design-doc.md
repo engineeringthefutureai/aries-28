@@ -86,14 +86,14 @@ Cut plan (minimizes cuts, keeps compactness):
 - **4× width horizontals @ 250mm** and **4× depth horizontals @ 350mm** (cut 4 pieces into 250+350 each — zero waste)
 - **2 spare full-length pieces** for mid-height rack supports / shelf supports / mistakes
 
-Resulting envelope ≈ **450 (H) × 290 (W) × 390 (D) mm external** (250/350 inner rails + 2020 profile) — a compact mid-tower, roughly half the volume of the 600mm no-cut option. Printed corner brackets or cast corner cubes; T-nuts throughout.
+Resulting envelope ≈ **450 (H) × 290 (W) × 390 (D) mm external** (250/350 inner rails + 2020 profile) — a compact mid-tower, well under a quarter the volume of an uncut-600mm cube (450×640×640mm ≈ 184M mm³ vs. 450×290×390mm ≈ 51M mm³). Printed corner brackets or cast corner cubes; T-nuts throughout.
 
 Cutting notes: miter saw with non-ferrous blade or fine-tooth hacksaw + miter box; deburr ends; square cuts matter for corner brackets.
 
 Three zones, bottom to top:
 1. **Power bay** (bottom): LRS-200-5, AC inlet, 12-circuit fuse block, ground bus. Heavy stuff low.
 2. **Node bays** (middle): carrier bays in rod-and-bead rack cartridges (see `rack-design.md`) at **two pitches** — a **30 mm compute pitch** for bare/diskless nodes (most of the fleet) and a **42 mm extended pitch** for nodes with a vertical accessory. The storage carrier (Pi 5 + top-mounted X1001 NVMe adapter) lives in a 42 mm extended bay. See `architecture.md` §6 for the two-pitch rationale.
-3. **Network shelf** (top): 8-port managed switch (second 8-port cascades here at expansion), patch cables dropping to carriers.
+3. **Network shelf** (top): 8-port managed switch (a second, and later a third, 8-port switch cascade here at expansion — see `network-design.md` §5.1), patch cables dropping to carriers.
 
 Front face reserves a cutout for the 7" display (portrait or landscape — decide in CAD before cutting acrylic). Panel/airflow/thermal/mounting details in §3.3.
 
@@ -201,7 +201,7 @@ At 5V, worst-case full-build current approaches ~40A (≈197W ÷ 5V), so voltage
 - **Fuse block:** a 12-circuit automotive blade panel with integrated negative bus. Automotive blade fuses are rated to 32V, which is the maximum voltage they can safely *interrupt*; the trip behavior is current-based and unaffected by operating at 5V. These fuses protect against **sustained overcurrent and fire** — their role here — and are not intended to interrupt sub-millisecond board-level faults; on-board protection and short wire runs cover that domain.
   - Worker/cp/gateway circuits: **4A blade fuses**
   - Storage-node circuits: **5A** (Pi 5 + NVMe peaks ~4A)
-  - Face node + LED circuit: 5A
+  - Face node + Tier-1/accent LED circuit: 5A. This covers the face node plus the non-addressable ambient and power-bay accent strips (each only a few watts, per `lighting-design.md` §2.2/§4). Tier-2 addressable status LEDs get their own additional circuit(s), sized to the actual installed pixel count once known (`lighting-design.md` §3.4) — the uncapped ~60W LED figure in the budget table above is a full-fleet ceiling spread across those circuits, not a load any single 5A branch carries.
 - **Carrier leads:** 18AWG silicone, short as practical, XT30 terminated.
 - **Voltage calibration:** with the fleet under `stress-ng` and LEDs at capped maximum, measure voltage at a carrier XT30 and trim the PSU V-ADJ pot to compensate distribution drop (Pi boards warn below ~4.8V). **Verify at both load extremes:** trimming the loaded voltage up reduces the drop margin at idle, so the idle carrier voltage rises — confirm it stays within the Pi's 5V ±5% window (4.75–5.25V) at both idle and full load rather than over-trimming for the loaded case alone. Perform this once at commissioning and after any wiring change. Correct calibration is the difference between stable operation and intermittent SD/undervoltage faults.
 - **Pi 5 note:** on 5V fused rails (no PD negotiation) the Pi 5 caps USB port output — irrelevant headless. Add `usb_max_current_enable=1` only if a USB device is attached.
@@ -250,6 +250,7 @@ The software layer, top to bottom. Everything non-physical is captured as code (
 | Private cloud | Nextcloud or Immich, MinIO (S3) | heavy pods pinned to st-1 |
 | Monitoring | **metrics-server** (~50MB) + **Netdata** on kiosk | VictoriaMetrics later *if* historical graphs are wanted; full Prometheus only if an 8GB node appears |
 | Access | WireGuard on gateway | private cloud from anywhere, zero exposed ports |
+| Registry | self-hosted container registry, gateway-hosted | optional, added when wanted (network-design.md §3) — enables rebuilding the cluster with no internet access after initial setup |
 
 Heterogeneous RAM (1/2/4GB) is a feature: every workload gets explicit resource requests/limits, and the scheduler's choices become observable on the LED panel.
 

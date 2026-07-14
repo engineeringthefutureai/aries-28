@@ -45,7 +45,7 @@ digraph Aries28 {
 
   // ================= K3S CLUSTER =================
   subgraph cluster_k8s {
-    label="k3s CLUSTER  ·  spans Raspberry Pi 5 nodes (control-plane + workers)";
+    label="k3s CLUSTER  ·  Raspberry Pi 5 (control-plane + storage) + Pi 4 (worker)";
     style="filled,rounded"; fillcolor="#0c2836"; color="#38bdf8";
     fontcolor="#bae6fd"; fontsize=12; penwidth=2; margin=16;
 

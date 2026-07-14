@@ -90,7 +90,7 @@ Responsibilities:
 ## 5. Switching
 
 ### 5.1 Switch capacity & expansion
-The internal switching lives on the facilities deck in a dedicated **switch rack** — a small rack (or shelf) with **3 bays for up to 3 identical 8-port switches** (TP-Link TL-SG108E). Start with one; cascade a second and third as node count grows (each cascade costs one port as the inter-switch uplink, so 3× 8-port ≈ 22 usable ports).
+The internal switching lives on the facilities deck in a dedicated **switch rack** — a small rack (or shelf) with **3 bays for up to 3 identical 8-port switches** (TP-Link TL-SG108E). Start with one; cascade a second and third as node count grows (each inter-switch link consumes one port on each of the two switches it joins — 2 switches lose 2 ports total for 14 usable, 3 switches chained lose 4 ports total for 3× 8-port ≈ 20 usable ports).
 
 - **Why identical switches:** uniformity — same model, same mount, same config approach, interchangeable like the compute carriers. A dead switch is swapped, not re-engineered.
 - **Bay standard (custom):** these switches have no off-the-shelf mounting standard (unlike the Decora comms panel), so the switch bay is **fabricated** — a 3D-printed or otherwise-made cradle sized to the TL-SG108E, holding up to three in the rack. This is one of the parts with no off-the-shelf answer, so custom fabrication is warranted (contrast §7.3).
