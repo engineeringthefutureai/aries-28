@@ -1,8 +1,8 @@
 # Aries 28 — Rack & Mounting System Design
 
 **Companion to the main design doc. Scope: node bays, rack structure, board retention, cable management, LED integration.**
-Version 0.2 — July 2026 · Status: Concept C (rod-and-bead) is lead candidate, pending geometry tests
-Changelog: v0.2 — added Concept C rod-and-bead swing rack (lead), demoted pillars to fallback, updated decision + open questions. v0.1 — concepts A/B, materials, detent ladder, buttons.
+Version 0.3 — July 2026 · Status: Concept C (rod-and-bead) is lead candidate; carrier/plate rod-hole fit confirmed, bead design + full cartridge assembly still pending
+Changelog: v0.3 — initial fit test passed (carrier + top/bottom plates on real 6.35mm rods, plywood test-cut, three Pi 5s mounted); confirms §4's rod-bore-fit risk (item 3) for the plate/carrier side, bead side still open. v0.2 — added Concept C rod-and-bead swing rack (lead), demoted pillars to fallback, updated decision + open questions. v0.1 — concepts A/B, materials, detent ladder, buttons.
 
 ---
 
@@ -60,7 +60,7 @@ Rear pair and front-left are **bridged** bead stacks (printed bridges between ad
 **Known geometry risks (test before committing the fleet):**
 1. Swing arc: rear-right corner sweeps the largest radius — must clear rear-left rod + beads. Sets minimum rod spacing vs carrier depth. Cardboard/scrap-print mockup first.
 2. Hand clearance: reaching the rear-right latch between bays at the 30 mm compute pitch. Escape hatch: front-actuated pushrod along the carrier edge.
-3. Bead bore fit on 6.35mm rod: coupon-test printed bore (start 6.5mm, ream to slip fit); pivot bores on carriers likewise.
+3. Bead bore fit on 6.35mm rod: coupon-test printed bore (start 6.5mm, ream to slip fit). **Carrier pivot bores confirmed** — initial fit test (v0.3) threaded laser-cut carriers and top/bottom plates onto the real rods cleanly. **Bead bore still open** — beads aren't designed/printed yet.
 
 ## 5. Decision
 
@@ -108,7 +108,7 @@ One recessed momentary button per bay, mounted on the rack (button-mount bead), 
 1. Measure: Pi 5 + X1001 stack height w/ standoffs; SD slot clearance vs carrier plane; XT30 pigtail exit; J2 header position on Pi 5.
 2. Swing-arc check: rod spacing vs carrier depth so rear-right corner clears rear-left stack (mockup first — this can kill the concept).
 3. Hand/latch clearance at the 30 mm compute pitch; pushrod fallback geometry if cramped.
-4. Bead bore + carrier pivot bore fit on 6.35mm rod — coupon 6.4/6.5/6.6mm.
+4. Bead bore fit on 6.35mm rod — coupon 6.4/6.5/6.6mm. (Carrier pivot bore fit confirmed by the v0.3 initial fit test — no longer open.)
 5. Bead stack tolerance: measure a 10-bead batch stack height; size the compliant top bead accordingly.
 6. Detent engagement depth for PETG finger — coupon 0.3/0.4/0.6mm.
 7. Carrier outline: full plate vs skeletal vs acrylic — one of each behind glass with an LED before fleet commit.

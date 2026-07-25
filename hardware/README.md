@@ -26,7 +26,7 @@ Files here are references. The **requirement** — material, dimensions, toleran
 |---|---|---|---|---|
 | Carrier | [`carrier/`](carrier/) | Holds one SBC; mounts into the rack | `[PRINT]` / `[SHEET]` | SHEET provided (`carrier-rpi-b.svg`, spacers nested); PRINT STL pending |
 | Spacer | [`spacer/`](spacer/) | Lifts a board off a sheet carrier | `[SHEET]` / `[PRINT]` | superseded for SHEET route — nested in the carrier SVG; see carrier |
-| Rack | [`rack/`](rack/) | Cartridge of bays at one pitch (30 mm or 42 mm) | `[SHEET]` / `[PRINT]` / `[BUY]` | in progress (plates: `rack-top-bottom.svg`; beads pending; pitches set 30/42 mm) |
+| Rack | [`rack/`](rack/) | Cartridge of bays at one pitch (30 mm or 42 mm) | `[SHEET]` / `[PRINT]` / `[BUY]` | plates + carrier rod-hole fit confirmed by initial test; beads (next milestone) pending |
 | Panels | [`panels/`](panels/) | Enclosure walls (show/solid faces) | `[SHEET]` | pending; optional layer |
 | Frame | [`frame/`](frame/) | 2020 extrusion skeleton + corners | `[BUY]` | specified (cut plan pending) |
 | Power bay | [`power-bay/`](power-bay/) | PSU/fuse/distribution mounting | `[PRINT]` / `[BUY]` | pending |

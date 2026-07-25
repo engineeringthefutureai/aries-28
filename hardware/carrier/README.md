@@ -73,7 +73,7 @@ Each program only auto-*groups* paths by color; you still assign Cut vs. Engrave
 
 The file previously carried Shaper Origin–specific metadata (`xmlns:shaper` namespace, `shaper:cutType`/`cutOffset`/`toolDia` on every path) left over from the tool it was authored in. This has been stripped — consistent with the project's "fabrication by requirement, not by tool" approach (`../README.md`) — so the file no longer assumes a specific machine.
 
-Note: these are current working files, not final released parts. The bay pitches are set at 30 mm (standard) / 42 mm (extended); interface dimensions are pending caliper confirmation against assembled hardware (see the rack design doc). A dimensioned reference drawing will be added as the design is finalized.
+Note: these are current working files, not final released parts. The bay pitches are set at 30 mm (standard) / 42 mm (extended). **Rod-hole fit confirmed:** an initial fit test — three carrier plates (plywood test-cut) threaded onto the real 6.35mm rods alongside `rack-top-bottom.svg`'s plates, each carrying a Pi 5 — passed, validating that the carrier's rod bores and the plates' rod holes agree (the shared-interface risk noted above). Beads, which set the actual bay pitch and provide the rack engagement/latch, are not yet designed or printed — assembling carrier + plates + beads together into a working cartridge is the next milestone, not this test. A dimensioned reference drawing will be added as the design is finalized.
 
 Board variants are named by **hole-pattern group**, not by individual board, since the Pi 3B/4B/5 share one 85×56mm footprint and M2.5 holes on 58×49mm — one carrier fits all three (`design-doc.md` §3.2):
 - `carrier-rpi-b.*` — Pi 3B / 4B / 5 (shared footprint)
