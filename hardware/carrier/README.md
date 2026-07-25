@@ -33,8 +33,8 @@ The carrier can be made by more than one method. Pick per your tools, materials,
 
 | Route | Process | Material | Notes |
 |---|---|---|---|
-| **Printed** | 3D print (FDM) | **PETG** | Can integrate standoffs/bosses directly (no separate spacers). Tougher and more heat-tolerant than PLA — see material note. Best when you want an all-in-one part. |
-| **Sheet-cut** | Laser or CNC (or careful hand-cutting + drill) | **Acrylic**, any color, ~3 mm | Flat plate; requires **separate spacers** (see the spacer part) to lift the board. Clear/translucent acrylic transmits light for edge-lit effects; opaque gives contrast. |
+| **Printed** | 3D print (FDM) | **PETG** | Integrates standoffs/bosses directly (no separate spacers). Tougher and more heat-tolerant than PLA — see material note. Best when you want an all-in-one part. STL pending (see below). |
+| **Sheet-cut** | Laser (or CNC, or careful hand-cutting + drill) | **Acrylic**, any color, ~3 mm | Flat plate; the spacers needed for vertical isolation are **nested in the same laser file**, cut from the plate's own cutout waste rather than a separately-designed part — see `carrier-rpi-b.svg`. Clear/translucent acrylic transmits light for edge-lit effects; opaque gives contrast. |
 
 **Requirement, not tool.** What the carrier needs is a flat, rigid plate of the specified outer geometry with the board's mounting holes at the correct coordinates and the rack-interface features accurate. Any process that achieves that — FDM printer, CO2 or diode laser, CNC router, or a saw and a drill press following the drawing — is valid. The provided `.svg` / `.stl` / `.step` files are references for those routes; the dimensioned drawing is the actual spec.
 
@@ -48,7 +48,7 @@ Use **PETG**, not PLA, for the printed carrier:
 ### Material note — acrylic (sheet route)
 
 - Any color works; the choice is aesthetic and depends on tool access and material on hand. Clear/translucent gives more light transmission and edge-lit highlights; opaque/black gives contrast and hides what is behind it.
-- Sheet carriers need **separate spacers** to lift the board off the plate — see the spacer part.
+- Sheet carriers need spacers to lift the board off the plate for vertical isolation; `carrier-rpi-b.svg` cuts these from the carrier's own cutout waste in the same laser pass — see the spacer part for the rationale, though the standalone spacer design there is superseded for this route.
 - Some tools cannot cut some materials (e.g. certain lasers vs. clear acrylic); this is a *tool* constraint, not a design one. Follow the dimensions with whatever cuts your chosen stock.
 
 ---
@@ -59,8 +59,9 @@ Use **PETG**, not PLA, for the printed carrier:
 
 | File | Route | Purpose |
 |---|---|---|
-| `carrier-holder.stl` | `[PRINT]` | Printable holder (PETG) with integrated standoff bosses and vent — the print route, no separate spacers needed. |
-| `carrier-holder-source.svg` | source | The 2D source profile the holder was modeled from. |
+| `carrier-rpi-b.svg` | `[SHEET]` | Laser-cut carrier for the Pi 3B/4B/5 shared footprint, sized to work with the rod-and-bead rack's top/bottom plates. Nests the vertical-isolation spacers as cutouts within the same file — one laser pass produces the carrier plate and its spacers together, no separate spacer part to cut. |
+
+Printed (`[PRINT]`) route: STL pending. It will integrate the spacers directly into the printed part (bosses, no separate pieces) rather than mirroring the sheet route's nested-cutout approach — see the fabrication table above.
 
 Note: these are current working files, not final released parts. The bay pitches are set at 30 mm (standard) / 42 mm (extended); interface dimensions are pending caliper confirmation against assembled hardware (see the rack design doc). A dimensioned reference drawing will be added as the design is finalized.
 
@@ -75,7 +76,7 @@ All variants share the same rack-facing interface; only the mounting-hole patter
 
 ## Dependencies
 
-- **Spacers** (sheet-cut route only) — lift the board off the plate. See the spacer part.
+- **Spacers** (sheet-cut route only) — lift the board off the plate for vertical isolation; nested directly in `carrier-rpi-b.svg` rather than a separate file. See the spacer part for the general rationale.
 - **Rack** — defines the carrier's rack-interface geometry (rod/bead or slide). See the rack design doc.
 - **Cable management** — connector-position differences between boards are absorbed by adjustable-slack cabling, not by the carrier. See the cable-management part.
 

@@ -9,7 +9,7 @@ Lifts a single-board computer off a flat sheet carrier, providing airflow beneat
 See the fabrication legend in [`../README.md`](../README.md) for method tags and material notes (PETG vs. PLA, acrylic, buy-vs-fabricate).
 
 ## Status
-Pending. Dimensions follow the board mounting-hole pattern and the required standoff height (see the design doc).
+Superseded for the sheet-cut route: `hardware/carrier/carrier-rpi-b.svg` nests the spacers as cutouts within the carrier's own laser file, cut from the plate's waste material in the same pass — no standalone spacer file needed there. This part folder remains relevant only if a future printed-route spacer, or a spacer for a board/carrier combination not covered by that nested design, is ever needed as a separate piece.
 
 ## Dependencies
 - Carrier (sheet route) — the spacer sits between board and carrier.

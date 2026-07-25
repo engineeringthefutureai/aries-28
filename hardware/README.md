@@ -24,14 +24,14 @@ Files here are references. The **requirement** — material, dimensions, toleran
 
 | Part | Folder | Purpose | Routes | Status |
 |---|---|---|---|---|
-| Carrier | [`carrier/`](carrier/) | Holds one SBC; mounts into the rack | `[PRINT]` / `[SHEET]` | design settled; fabrication route open (both provided) |
-| Spacer | [`spacer/`](spacer/) | Lifts a board off a sheet carrier | `[SHEET]` / `[PRINT]` | pending |
+| Carrier | [`carrier/`](carrier/) | Holds one SBC; mounts into the rack | `[PRINT]` / `[SHEET]` | SHEET provided (`carrier-rpi-b.svg`, spacers nested); PRINT STL pending |
+| Spacer | [`spacer/`](spacer/) | Lifts a board off a sheet carrier | `[SHEET]` / `[PRINT]` | superseded for SHEET route — nested in the carrier SVG; see carrier |
 | Rack | [`rack/`](rack/) | Cartridge of bays at one pitch (30 mm or 42 mm) | `[PRINT]` / `[BUY]` | in progress (STL present; pitches set 30/42 mm) |
 | Panels | [`panels/`](panels/) | Enclosure walls (show/solid faces) | `[SHEET]` | pending; optional layer |
 | Frame | [`frame/`](frame/) | 2020 extrusion skeleton + corners | `[BUY]` | specified (cut plan pending) |
 | Power bay | [`power-bay/`](power-bay/) | PSU/fuse/distribution mounting | `[PRINT]` / `[BUY]` | pending |
 | Switch mount | [`switch-mount/`](switch-mount/) | Cradle for up to 3 identical switches | `[PRINT]` | pending (no off-the-shelf standard → fabricated) |
 | Cable brace | [`cable-brace/`](cable-brace/) | Parallel-run holder + service-loop park | `[PRINT]` | pending |
-| Connection panel | [`connection-panel/`](connection-panel/) | External I/O face (inlet, button, Decora) | `[SHEET]` + `[BUY]` | specified (Decora + keystones) |
+| Connection panel | [`connection-panel/`](connection-panel/) | External I/O face (inlet, soft-power toggle, Decora) | `[SHEET]` + `[BUY]` | specified (Decora + keystones) |
 
 Statuses are indicative and will change as the build progresses. "Pending" means the requirement is described in the design docs but no fabrication file has been finalized.
