@@ -53,7 +53,7 @@ Rear pair and front-left are **bridged** bead stacks (printed bridges between ad
 
 **Tolerance & preload (the failure mode to engineer against):** all-smooth rods mean pitch is set purely by the bead stack — printed height error accumulates. Countermeasures: print each rod's beads in one batch (same profile, same squish); design the **topmost bead as compliant** (printed wave-spring profile, or an O-ring under the top plate) so plate clamping preloads the stack solid regardless of ±0.5mm accumulated error; carriers get ±1mm vertical compliance at the latch.
 
-**Rod ends:** blind pockets in top/bottom plates; frame bolts provide clamping force. No threads, no e-clips in v1.
+**Rod ends:** blind pockets in top/bottom plates; frame bolts provide clamping force. No threads, no e-clips in v1. Top/bottom plates are laser-cut sheet (`hardware/rack/rack-top-bottom.svg`) rather than printed; their rod-hole placement is shared with the carrier's rod/pivot bores (`hardware/carrier/carrier-rpi-b.svg`) and the two are designed together.
 
 **Assembly property:** the entire populated rack is a **cartridge** — build, wire, and bench-test it outside the tower, then drop it in as one unit.
 

@@ -59,7 +59,7 @@ Use **PETG**, not PLA, for the printed carrier:
 
 | File | Route | Purpose |
 |---|---|---|
-| `carrier-rpi-b.svg` | `[SHEET]` | Laser-cut carrier for the Pi 3B/4B/5 shared footprint, sized to work with the rod-and-bead rack's top/bottom plates. Nests the vertical-isolation spacers as cutouts within the same file — one laser pass produces the carrier plate and its spacers together, no separate spacer part to cut. |
+| `carrier-rpi-b.svg` | `[SHEET]` | Laser-cut carrier for the Pi 3B/4B/5 shared footprint. Its rod/pivot bores share rod-hole placement with [`../rack/rack-top-bottom.svg`](../rack/rack-top-bottom.svg) — designed together, not independently; see that README's note before changing either. Nests the vertical-isolation spacers as cutouts within the same file — one laser pass produces the carrier plate and its spacers together, no separate spacer part to cut. |
 
 Printed (`[PRINT]`) route: STL pending. It will integrate the spacers directly into the printed part (bosses, no separate pieces) rather than mirroring the sheet route's nested-cutout approach — see the fabrication table above.
 
