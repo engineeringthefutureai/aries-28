@@ -1,10 +1,10 @@
 # Part: Connection panel
 
 ## Purpose & role
-The single external-facing I/O face. Fixed cuts: IEC C14 power inlet (with switch/fuse), a recessed power button, and one standard Decora opening. Comms use off-the-shelf Decora + keystone inserts (RJ45 for WAN and MAINT, optional USB console, blanks) rather than custom-printed sub-panels — an existing modular standard is preferred where one exists. Only the acrylic cutout is fabricated.
+The single external-facing I/O face. Fixed cuts: IEC C14 power inlet (with switch/fuse), a recessed soft-power toggle (the DPST toggle from `docs/design-doc.md` §4.4 — a maintained-position switch, not a momentary button), and one standard Decora opening. Comms use off-the-shelf Decora + keystone inserts (RJ45 for WAN and MAINT, optional USB console, blanks) rather than custom-printed sub-panels — an existing modular standard is preferred where one exists. Only the acrylic cutout is fabricated.
 
 ## Fabrication route(s)
-`[SHEET]` (acrylic cutout to the standard Decora opening dimensions) + `[BUY]` (Decora frame, keystones, IEC inlet, button).
+`[SHEET]` (acrylic cutout to the standard Decora opening dimensions) + `[BUY]` (Decora frame, keystones, IEC inlet, toggle).
 
 See the fabrication legend in [`../README.md`](../README.md) for method tags and material notes (PETG vs. PLA, acrylic, buy-vs-fabricate).
 

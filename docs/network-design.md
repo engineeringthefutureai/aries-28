@@ -190,7 +190,7 @@ The single external face for power and comms. Designed on the same principle as 
 
 ### 8.1 Fixed components (permanent cuts)
 - **IEC C14 power inlet** with integrated switch + fuse — the single AC entry. Never changes.
-- **Power button** — soft-power / service button, **recessed** (so a curious finger or a bump can't trigger a force-off). Fixed location.
+- **Soft-power toggle** — the DPST toggle from `design-doc.md` §4.4, **recessed** (so a curious finger or a bump can't trigger a force-off). A maintained-position toggle, not a momentary button — it carries the AC load continuously while the tower runs (§4.4 Pole 1), so it must stay closed, not spring back. Fixed location, next to the IEC inlet it switches.
 - **Decora opening** — one standard rectangular cutout for all comms (see below).
 
 ### 8.2 Comms: Decora + keystones (off-the-shelf, not custom-printed)

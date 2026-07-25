@@ -140,7 +140,7 @@ The panel and lighting choices below are one implementation's aesthetic; they ar
 
 **Front panel engraving (brand mark).** Large Aries ram glyph (♈, the validated SVG from the carrier work) engraved on the **back face** of the smoked front panel, centered, with cyan circuit-traces radiating outward; LED strip along the panel edge edge-lights the engraving so it glows while the rest stays dark. Motif repeats at three scales: big glyph on the front (logo) · astrometric Aries constellation as a secondary detail (signature) · tiny ram per carrier (texture). 7" display integrated into the trace artwork.
 
-- **Connection panel (rear, laser-cut):** IEC C14 inlet w/ switch+fuse (only power entry), RJ45 keystone **WAN**, RJ45 keystone **MAINT** (direct switch port, bypasses gateway), panel USB-C (gateway serial console).
+- **Connection panel (rear, laser-cut):** IEC C14 inlet w/ switch+fuse (only power entry), the recessed **DPST soft-power toggle** (§4.4), RJ45 keystone **WAN**, RJ45 keystone **MAINT** (direct switch port, bypasses gateway), optional USB-C keystone (gateway serial console — see `network-design.md` §8.2).
 
 ### 3.3.1 Airflow & thermal
 
@@ -227,7 +227,7 @@ At 5V, worst-case full-build current approaches ~40A (≈197W ÷ 5V), so voltage
 
 ### 4.4 Soft power — self-holding circuit (Phase 6, lesson #9)
 
-Single front-panel control for orderly fleet shutdown. No battery, no always-on supervisor.
+Single control for orderly fleet shutdown, mounted on the rear connection panel next to the IEC inlet it switches (§3.3, `network-design.md` §8.1 — not a front-panel control). No battery, no always-on supervisor.
 
 **Topology:** mains-rated **DPST toggle** and an **SSR** wired *in parallel* on the AC path between the fused IEC inlet and the PSU. Either closed = PSU energized.
 
@@ -239,7 +239,7 @@ Single front-panel control for orderly fleet shutdown. No battery, no always-on 
 
 **Power hierarchy:** toggle = soft off · IEC rocker = hard kill (upstream of everything).
 **Known edge case:** face carrier pulled or face node down → soft-off silently degrades to hard-off (SSR already open; toggle-off cuts instantly). LED panel must show a warning state whenever the face node is absent.
-**Day-one accommodations:** DPST toggle + SSR footprint in the power bay; one fuse-block circuit reserved; note that a halted Pi still draws power — `shutdown -h` makes filesystems safe but only the SSR actually de-energizes the tower.
+**Day-one accommodations:** DPST toggle panel-mounted on the connection panel, SSR + wiring footprint in the power bay it switches; one fuse-block circuit reserved; note that a halted Pi still draws power — `shutdown -h` makes filesystems safe but only the SSR actually de-energizes the tower.
 
 ---
 
