@@ -95,7 +95,7 @@ Cutting notes: miter saw with non-ferrous blade or fine-tooth hacksaw + miter bo
 
 Three zones, bottom to top:
 1. **Power bay** (bottom): LRS-200-5, AC inlet, 12-circuit fuse block, ground bus. Heavy stuff low.
-2. **Node bays** (middle): carrier bays in rod-and-bead rack cartridges (see `rack-design.md`) at **two pitches** — a **30 mm compute pitch** for bare/diskless nodes (most of the fleet) and a **42 mm extended pitch** for nodes with a vertical accessory. The storage carrier (Pi 5 + top-mounted X1001 NVMe adapter) lives in a 42 mm extended bay. See `architecture.md` §6 for the two-pitch rationale.
+2. **Node bays** (middle): carrier bays in rod-and-bead rack cartridges (see `rack-design.md`) at **two pitches** — a **30 mm compute pitch** for bare/diskless nodes (gateway, light worker, face node) and a **42 mm extended pitch** for nodes with a vertical accessory. The control-plane and storage carriers (Pi 5 + top-mounted X1001 NVMe adapter) live in 42 mm extended bays — now most of the compute fleet, since every k3s server carries an NVMe HAT for etcd (§4.3), not just the storage node. See `architecture.md` §6 for the two-pitch rationale.
 3. **Network shelf** (top): 8-port managed switch (second 8-port cascades here at expansion), patch cables dropping to carriers.
 
 Front face reserves a cutout for the 7" display (portrait or landscape — decide in CAD before cutting acrylic). Panel/airflow/thermal/mounting details in §3.3.

@@ -12,7 +12,7 @@ Changelog: v0.2 — added Concept C rod-and-bead swing rack (lead), demoted pill
 |---|---|---|
 | R1 | Tool-free insert/remove of any node (power unplugged first — cold-swap mechanically, drain-first at cluster level) | live-surgery goal |
 | R2 | Every connector that gets pushed/pulled (ethernet, XT30, SD) sits adjacent to a supported mount point | PCB flex rule |
-| R3 | Storage node (Pi 5 + X1001, 3-hole HAT) mounts in the same system, in an extended-pitch (42 mm) bay | main doc §3.1 |
+| R3 | Any NVMe-equipped node (Pi 5 + X1001, 3-hole HAT) — every control-plane node plus the storage node — mounts in the same system, in an extended-pitch (42 mm) bay | main doc §3.1, §4.3 |
 | R4 | Retention mechanism is a replaceable wear part — worn parts swap without rebuilding the rack | 50-cycle problem |
 | R5 | Boards visible as display objects; mounting hardware minimal or concealed | aesthetics (optional) |
 | R6 | Cable routing is designed, not incidental — for serviceability and strain management | serviceability |
@@ -49,7 +49,7 @@ Rear pair and front-left are **bridged** bead stacks (printed bridges between ad
 - Standard (compute) bead: sets the **30 mm** compute pitch, keyed to neighbors by interlocking tabs; bottom bead keys into the base plate → whole stack inherits orientation (round rods can't key themselves).
 - **Anchor beads:** special beads with tabs/T-nut bosses bolting the cartridge to the 2020 frame at mid-heights — attachment and rod anti-bowing brace in one part.
 - Other special beads as needed: cable-comb beads, LED-strip beads, button-mount beads (R8 lives here — the bead is the expansion slot).
-- Extended bead: sets the **42 mm** extended pitch for the tall rack — nodes with a vertical HAT, such as the Pi 5 + NVMe storage stack (R3). Two pitches → two bead sizes; each rack cartridge uses one size throughout (architecture.md §6).
+- Extended bead: sets the **42 mm** extended pitch for the tall rack — nodes with a vertical HAT, such as a Pi 5 + NVMe stack (etcd on a control-plane node, or bulk storage — R3). Two pitches → two bead sizes; each rack cartridge uses one size throughout (architecture.md §6).
 
 **Tolerance & preload (the failure mode to engineer against):** all-smooth rods mean pitch is set purely by the bead stack — printed height error accumulates. Countermeasures: print each rod's beads in one batch (same profile, same squish); design the **topmost bead as compliant** (printed wave-spring profile, or an O-ring under the top plate) so plate clamping preloads the stack solid regardless of ±0.5mm accumulated error; carriers get ±1mm vertical compliance at the latch.
 
