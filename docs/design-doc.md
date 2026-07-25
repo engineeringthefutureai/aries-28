@@ -93,10 +93,9 @@ Resulting envelope ≈ **450 (H) × 290 (W) × 390 (D) mm external** (250/350 in
 
 Cutting notes: miter saw with non-ferrous blade or fine-tooth hacksaw + miter box; deburr ends; square cuts matter for corner brackets.
 
-Three zones, bottom to top:
-1. **Power bay** (bottom): LRS-200-5, AC inlet, 12-circuit fuse block, ground bus. Heavy stuff low.
-2. **Node bays** (middle): carrier bays in rod-and-bead rack cartridges (see `rack-design.md`) at **two pitches** — a **30 mm compute pitch** for bare/diskless nodes (gateway, light worker, face node) and a **42 mm extended pitch** for nodes with a vertical accessory. The control-plane and storage carriers (Pi 5 + top-mounted X1001 NVMe adapter) live in 42 mm extended bays — now most of the compute fleet, since every k3s server carries an NVMe HAT for etcd (§4.3), not just the storage node. See `architecture.md` §6 for the two-pitch rationale.
-3. **Network shelf** (top): 8-port managed switch (second 8-port cascades here at expansion), patch cables dropping to carriers.
+Two decks, bottom to top (see `architecture.md` §5 for the deck-layer rationale):
+1. **Facilities deck** (bottom, full footprint): LRS-200-5, AC inlet, 12-circuit fuse block, ground bus, and the switch rack — 8-port managed switch (second 8-port cascades in here at expansion), patch cables dropping up to the compute deck's carriers. Heavy, static infrastructure kept low for stability and serviceability, displayed as a feature through the panels.
+2. **Compute deck** (above): carrier bays in rod-and-bead rack cartridges (see `rack-design.md`) at **two pitches** — a **30 mm compute pitch** for bare/diskless nodes (gateway, light worker, face node) and a **42 mm extended pitch** for nodes with a vertical accessory. The control-plane and storage carriers (Pi 5 + top-mounted X1001 NVMe adapter) live in 42 mm extended bays — now most of the compute fleet, since every k3s server carries an NVMe HAT for etcd (§4.3), not just the storage node. See `architecture.md` §6 for the two-pitch rationale.
 
 Front face reserves a cutout for the 7" display (portrait or landscape — decide in CAD before cutting acrylic). Panel/airflow/thermal/mounting details in §3.3.
 
