@@ -25,7 +25,7 @@ spec:
     metadata:
       labels: { app: example-site }
     spec:
-      # Soft anti-affinity: prefer to place replicas on different nodes.
+      # Topology spread: prefer to place replicas on different nodes.
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
