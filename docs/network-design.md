@@ -65,6 +65,8 @@ Two Ethernet keystones on the connection panel:
 
 `aries-gw` — a Raspberry Pi 4, deliberately **outside** the k3s cluster.
 
+**Hardware — two NICs.** A Pi 4 has one onboard Ethernet port, which isn't enough for a device that sits between two networks. The onboard port serves the internal switch trunk (§5.2 — router-on-a-stick across VLANs 10/20/99); a second, USB3-to-GbE adapter (same part as the face node's, `design-doc.md` §7 BOM) carries the WAN uplink. This is what `dns-and-exposure.md` §6.2 refers to as the gateway's "two network interfaces."
+
 Responsibilities:
 - **Router / NAT** between the WAN uplink and the private `10.28.0.0/24` subnet.
 - **DHCP** (optional; static reservations) and **DNS** (dnsmasq or Pi-hole) for internal `*.aries.lan` resolution.

@@ -11,7 +11,7 @@ Version 0.5 — July 2026
 
 **Non-goals:** Production reliability guarantees, performance competitiveness with x86, minimizing cost at the expense of learnability. This is a toy with a curriculum.
 
-**Cost:** full from-scratch replication is roughly **$970–$1,150**, and varies heavily with current market pricing — this specification was priced during a period of elevated RAM/storage prices (see the BOM in §7). Existing hardware reduces the total; the from-scratch figure is the reference for a complete build.
+**Cost:** full from-scratch replication is roughly **$980–$1,160**, and varies heavily with current market pricing — this specification was priced during a period of elevated RAM/storage prices (see the BOM in §7). Existing hardware reduces the total; the from-scratch figure is the reference for a complete build.
 
 **Lessons embedded in the design (the real deliverables):**
 1. k3s from single-server to a redundant control plane (embedded etcd, quorum) — node-level fault tolerance; the migration itself is a lesson
@@ -58,7 +58,7 @@ Internet / Home LAN
 
 | Node | Board | Role | RAM need | Storage |
 |---|---|---|---|---|
-| aries-gw | Pi 4 1GB | Router, DHCP, DNS, WireGuard, netboot (Ph.4) | ~512MB | microSD |
+| aries-gw | Pi 4 1GB + USB3-GbE adapter | Router, DHCP, DNS, WireGuard, netboot (Ph.4) — two NICs: onboard Ethernet to the internal switch trunk, USB3-GbE to WAN (see `network-design.md` §5.2) | ~512MB | microSD |
 | aries-cp-1 | Pi 5 2GB | k3s server (embedded etcd) + worker; **current build** — also carries interim storage duty (Longhorn/Nextcloud) until st-1 is added | ~2GB | microSD (OS) + **NVMe 256GB** (etcd + interim data) |
 | aries-cp-2, aries-cp-3 | Pi 5 2GB | k3s server **and** worker — Phase 3+ HA joins, not yet built | ~2GB | microSD (OS) + **NVMe** (etcd)* |
 | aries-st-1 | **Pi 5 4GB** | k3s agent, storage-labeled; Longhorn, Nextcloud/MinIO — **planned addition**; takes over the bulk-storage role from cp-1's interim NVMe once built | 4GB | **NVMe 256GB** (1TB-class upgrade later) |
@@ -308,7 +308,7 @@ Prices as of July 2026, during the DRAM shortage. A replication should expect th
 | Raspberry Pi 4 1GB (gateway, wk-1) | 2 | $70 |
 | Raspberry Pi 3A+ (face node) | 1 | $25 |
 | Official 7" Touch Display 2 | 1 | $60 |
-| USB3-to-GbE adapter (RTL8152/AX88179) | 1 | $10 |
+| USB3-to-GbE adapter (RTL8152/AX88179) — one for the face node, one for the gateway's WAN uplink (its onboard NIC serves the internal switch trunk) | 2 | $20 |
 | Geekworm X1001 M.2 adapter + Vansuny 256GB NVMe Gen3 | 4 | $252* |
 | 8-port GbE **managed** switch (TP-Link TL-SG108E) | 1 | $28 |
 | DPST mains toggle + SSR (Phase 6 soft power) | — | $15 |
@@ -321,9 +321,9 @@ Prices as of July 2026, during the DRAM shortage. A replication should expect th
 | WS2812B addressable strip + Arduino Nano LED driver (no level shifter) | — | $14 |
 | 140mm ARCTIC P14 Pro A-RGB fan + filter | 1 | $14 |
 | Keystones, fused IEC inlet, patch cables | — | $18 |
-| **Total (full replication, approximate)** | | **≈ $970** |
+| **Total (full replication, approximate)** | | **≈ $980** |
 
-*Line items above are representative prices during the 2026 shortage and sum to roughly $970; realistic all-in cost including fabrication consumables, fasteners, and market variance ranges to about $1,150. Treat the total as a ballpark, not a fixed figure — component prices (boards, storage especially) move significantly.
+*Line items above are representative prices during the 2026 shortage and sum to roughly $980; realistic all-in cost including fabrication consumables, fasteners, and market variance ranges to about $1,160. Treat the total as a ballpark, not a fixed figure — component prices (boards, storage especially) move significantly.
 
 *Right-sized into the NAND shortage (NAND ~8.5× mid-2025 spot prices; Q1 2026 street prices roughly doubled). Qty 4 = one X1001+NVMe per control-plane node (etcd — SD is not recommended for etcd's fsync-heavy writes, §4.3) plus one for the storage node (Longhorn + Nextcloud bulk data). 256GB on the storage node covers phase-one Longhorn + Nextcloud; the 1TB-class upgrade waits for post-2027 recovery and rides the X1001 unchanged. cp nodes use the same 256GB SKU for bulk-buy simplicity even though etcd alone needs only a few hundred MB.
 
