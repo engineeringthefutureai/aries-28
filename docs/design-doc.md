@@ -11,7 +11,7 @@ Version 0.5 — July 2026
 
 **Non-goals:** Production reliability guarantees, performance competitiveness with x86, minimizing cost at the expense of learnability. This is a toy with a curriculum.
 
-**Cost:** full from-scratch replication is roughly **$980–$1,160**, and varies heavily with current market pricing — this specification was priced during a period of elevated RAM/storage prices (see the BOM in §7). Existing hardware reduces the total; the from-scratch figure is the reference for a complete build.
+**Cost:** full from-scratch replication is roughly **$984–$1,164**, and varies heavily with current market pricing — this specification was priced during a period of elevated RAM/storage prices (see the BOM in §7). Existing hardware reduces the total; the from-scratch figure is the reference for a complete build.
 
 **Lessons embedded in the design (the real deliverables):**
 1. k3s from single-server to a redundant control plane (embedded etcd, quorum) — node-level fault tolerance; the migration itself is a lesson
@@ -322,10 +322,11 @@ Prices as of July 2026, during the DRAM shortage. A replication should expect th
 | Acrylic (black + smoked) | — | $25 |
 | WS2812B addressable strip + Arduino Nano LED driver (no level shifter) | — | $14 |
 | 140mm ARCTIC P14 Pro A-RGB fan + filter | 1 | $14 |
+| XL6019 5V→12V boost converter module (fan motor only — see §3.3.1) | 1 | $4 |
 | Keystones, fused IEC inlet, patch cables | — | $18 |
-| **Total (full replication, approximate)** | | **≈ $980** |
+| **Total (full replication, approximate)** | | **≈ $984** |
 
-*Line items above are representative prices during the 2026 shortage and sum to roughly $980; realistic all-in cost including fabrication consumables, fasteners, and market variance ranges to about $1,160. Treat the total as a ballpark, not a fixed figure — component prices (boards, storage especially) move significantly.
+*Line items above are representative prices during the 2026 shortage and sum to roughly $984; realistic all-in cost including fabrication consumables, fasteners, and market variance ranges to about $1,164. Treat the total as a ballpark, not a fixed figure — component prices (boards, storage especially) move significantly.
 
 *Right-sized into the NAND shortage (NAND ~8.5× mid-2025 spot prices; Q1 2026 street prices roughly doubled). Qty 4 = one X1001+NVMe per control-plane node (etcd — SD is not recommended for etcd's fsync-heavy writes, §4.3) plus one for the storage node (Longhorn + Nextcloud bulk data). 256GB on the storage node covers phase-one Longhorn + Nextcloud; the 1TB-class upgrade waits for post-2027 recovery and rides the X1001 unchanged. cp nodes use the same 256GB SKU for bulk-buy simplicity even though etcd alone needs only a few hundred MB.
 

@@ -157,7 +157,7 @@ You do **not** need to replicate the exact fleet. The design is intentionally mo
 - Fabrication is tool-agnostic — parts are specified by requirement (material, dimensions, tolerances), so laser, CNC, or hand tools all work.
 - Software runs on any modern Pi cluster; the runbooks are generic k3s.
 
-Prices and part availability vary (this project was designed during a period of unusually high RAM/storage prices — see the BOM notes). Full from-scratch replication is roughly **$980–$1,160** (see `docs/design-doc.md` §7). Treat the BOM as a starting reference, not a fixed shopping list.
+Prices and part availability vary (this project was designed during a period of unusually high RAM/storage prices — see the BOM notes). Full from-scratch replication is roughly **$984–$1,164** (see `docs/design-doc.md` §7). Treat the BOM as a starting reference, not a fixed shopping list.
 
 ---
 
