@@ -13,7 +13,7 @@ See the fabrication legend in [`../README.md`](../README.md) for method tags and
 |---|---|---|
 | `rack-top-bottom.svg` | `[SHEET]` | Laser-cut top and bottom plates for the rod-and-bead cartridge (`docs/rack-design.md` §4), with the rod holes that seat the four 6.35mm rods. |
 
-Bead files (`[PRINT]`) are pending.
+Bead files (`[PRINT]`) are pending. `rack-top-bottom.svg` is a single-color, cut-only file (no engrave layer, unlike the carrier) — Shaper Origin–specific metadata from the authoring tool has been stripped, same as `carrier-rpi-b.svg` (see that README's laser-color-convention note).
 
 ## Status
 In progress. The top/bottom plates moved from a printed STL to the laser-cut `rack-top-bottom.svg` above; the two bay pitches are set — 30 mm (dense/compute) and 42 mm (extended/expansion). Final interface fit is pending caliper confirmation against assembled hardware. See `docs/rack-design.md`.

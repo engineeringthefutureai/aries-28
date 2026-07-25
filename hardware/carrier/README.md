@@ -63,6 +63,16 @@ Use **PETG**, not PLA, for the printed carrier:
 
 Printed (`[PRINT]`) route: STL pending. It will integrate the spacers directly into the printed part (bosses, no separate pieces) rather than mirroring the sheet route's nested-cutout approach — see the fabrication table above.
 
+### Laser color convention (cut vs. engrave)
+
+`carrier-rpi-b.svg` uses stroke **color** to separate the two operations it contains, since that's what both LightBurn and Creality Studio use to auto-split an imported SVG into independently-assignable layers — neither program reads a "cut this, engrave that" flag from the file itself:
+- **Gray `#7F7F7F`, unfilled hairline** — outer profile, mounting holes, and the nested spacer cutouts. Assign this layer to **Cut**.
+- **Blue `#0000FF`, unfilled** — the Aries glyph. Assign this layer to **Line/engrave the contour** (trace the outline, not a filled-region Scan/Fill). Unfilled on purpose — it's a contour engrave, not a solid-fill one.
+
+Each program only auto-*groups* paths by color; you still assign Cut vs. Engrave to each color-layer once inside the software. In LightBurn that assignment persists across re-imports of an updated SVG as long as the colors stay consistent, so this is a one-time setup per color, not per re-export.
+
+The file previously carried Shaper Origin–specific metadata (`xmlns:shaper` namespace, `shaper:cutType`/`cutOffset`/`toolDia` on every path) left over from the tool it was authored in. This has been stripped — consistent with the project's "fabrication by requirement, not by tool" approach (`../README.md`) — so the file no longer assumes a specific machine.
+
 Note: these are current working files, not final released parts. The bay pitches are set at 30 mm (standard) / 42 mm (extended); interface dimensions are pending caliper confirmation against assembled hardware (see the rack design doc). A dimensioned reference drawing will be added as the design is finalized.
 
 Board variants are named by **hole-pattern group**, not by individual board, since the Pi 3B/4B/5 share one 85×56mm footprint and M2.5 holes on 58×49mm — one carrier fits all three (`design-doc.md` §3.2):
