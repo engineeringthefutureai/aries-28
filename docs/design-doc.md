@@ -203,7 +203,8 @@ At 5V, worst-case full-build current approaches ~40A (≈197W ÷ 5V), so voltage
 - **Fuse block:** a 12-circuit automotive blade panel with integrated negative bus. Automotive blade fuses are rated to 32V, which is the maximum voltage they can safely *interrupt*; the trip behavior is current-based and unaffected by operating at 5V. These fuses protect against **sustained overcurrent and fire** — their role here — and are not intended to interrupt sub-millisecond board-level faults; on-board protection and short wire runs cover that domain.
   - Worker/cp/gateway circuits: **4A blade fuses**
   - Storage-node circuits: **5A** (Pi 5 + NVMe peaks ~4A)
-  - Face node + LED circuit: 5A
+  - Face node + display circuit: **5A** (~1A face node + ~0.8A display — comfortable margin)
+  - LED circuit (status + ambient) — **its own circuit, separate from the face node: 10A.** Sized to the capped *endgame* ceiling, not today's partial pixel count: the `MAX_BRIGHTNESS = 0.5` software cap (§3.4, §9.2) holds worst-case draw to ~30W ≈ 6A at 5V against the ~200-pixel endgame budget in §4.1, and a shared 5A fuse can't carry that even before adding the face node's own load. Splitting it off also means an LED-side fault can't take the face node down with it, which matters because the face node drives the soft-power shutdown sequence (§4.4). Re-fuse to the actual pixel count once it's finalized (`lighting-design.md` §3.4).
 - **Carrier leads:** 18AWG silicone, short as practical, XT30 terminated.
 - **Voltage calibration:** with the fleet under `stress-ng` and LEDs at capped maximum, measure voltage at a carrier XT30 and trim the PSU V-ADJ pot to compensate distribution drop (Pi boards warn below ~4.8V). **Verify at both load extremes:** trimming the loaded voltage up reduces the drop margin at idle, so the idle carrier voltage rises — confirm it stays within the Pi's 5V ±5% window (4.75–5.25V) at both idle and full load rather than over-trimming for the loaded case alone. Perform this once at commissioning and after any wiring change. Correct calibration is the difference between stable operation and intermittent SD/undervoltage faults.
 - **Pi 5 note:** on 5V fused rails (no PD negotiation) the Pi 5 caps USB port output — irrelevant headless. Add `usb_max_current_enable=1` only if a USB device is attached.
@@ -367,5 +368,5 @@ The control-plane quorum (three server nodes with embedded etcd) protects agains
 - **Switch dies:** entire cluster offline until replaced (SPOF, §9.1). Identical spare switch shortens recovery.
 - **Face node dies:** cluster unaffected; the status display and LEDs stop, and soft-off degrades to hard-off (toggle-off cuts power directly). A LED warning state covers this.
 - **PSU dies:** everything stops; data is safe if storage replicas ≥ 2. Replacement is four screws.
-- **LED daemon bug sets full brightness:** the brightness cap holds draw to ~30W; the fuse is the hardware backstop behind the software cap.
+- **LED daemon bug sets full brightness:** the brightness cap holds draw to ~30W (~6A); the LED circuit's own 10A fuse (§4.2) is the hardware backstop behind the software cap, and being a dedicated circuit it trips without also risking the face node's power.
 - **Pi 4 boards found to be 2/4 GB on inspection:** promote to workers/storage; BOM adjusts accordingly.

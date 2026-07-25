@@ -83,7 +83,7 @@ The ARCTIC P14 Pro's ARGB connector is a WS2812-style 5V addressable data line (
 
 ### 3.4 Power
 - Addressable strips/rings run on **5V** from the distribution bus (not through the Nano — the Nano supplies *data* only; power comes from the rail, common ground with the Nano).
-- Budget per WS2812 pixel: up to 60 mA at full white. The daemon's `MAX_BRIGHTNESS = 0.5` cap (main doc §4) bounds worst-case draw. Size the fuse-block circuit for the actual pixel count when known.
+- Budget per WS2812 pixel: up to 60 mA at full white. The daemon's `MAX_BRIGHTNESS = 0.5` cap (main doc §4) bounds worst-case draw. Size the fuse-block circuit for the actual pixel count when known — interim value is **10A** on its own circuit, separate from the face node, sized to the §4.1 endgame budget (~200 pixels capped ≈ 6A) rather than today's partial build; re-fuse down once the final count is set.
 
 ---
 
