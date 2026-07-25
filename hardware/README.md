@@ -26,7 +26,7 @@ Files here are references. The **requirement** — material, dimensions, toleran
 |---|---|---|---|---|
 | Carrier | [`carrier/`](carrier/) | Holds one SBC; mounts into the rack | `[PRINT]` / `[SHEET]` | design settled; fabrication route open (both provided) |
 | Spacer | [`spacer/`](spacer/) | Lifts a board off a sheet carrier | `[SHEET]` / `[PRINT]` | pending |
-| Rack | [`rack/`](rack/) | Cartridge of bays at one pitch (30 mm or 42 mm) | `[PRINT]` | in progress (STL present; pitches set 30/42 mm) |
+| Rack | [`rack/`](rack/) | Cartridge of bays at one pitch (30 mm or 42 mm) | `[PRINT]` / `[BUY]` | in progress (STL present; pitches set 30/42 mm) |
 | Panels | [`panels/`](panels/) | Enclosure walls (show/solid faces) | `[SHEET]` | pending; optional layer |
 | Frame | [`frame/`](frame/) | 2020 extrusion skeleton + corners | `[BUY]` | specified (cut plan pending) |
 | Power bay | [`power-bay/`](power-bay/) | PSU/fuse/distribution mounting | `[PRINT]` / `[BUY]` | pending |
