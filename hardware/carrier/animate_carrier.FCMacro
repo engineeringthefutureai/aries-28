@@ -1,0 +1,155 @@
+import FreeCAD as App
+import FreeCADGui as Gui
+import time
+import math
+import os
+import shutil
+
+def run_animation():
+    # --- Configuration ---
+    record_gif = True
+    gif_output = "/home/kiryl/aries-28/hardware/animation.gif"
+    frame_dir = "/tmp/freecad_anim"
+    frame_idx = 0
+    # ---------------------
+    
+    if record_gif:
+        if os.path.exists(frame_dir):
+            shutil.rmtree(frame_dir)
+        os.makedirs(frame_dir)
+        
+    def capture_frame():
+        nonlocal frame_idx
+        doc.recompute()
+        Gui.updateGui()
+        if record_gif and App.GuiUp:
+            view = Gui.ActiveDocument.ActiveView
+            if view:
+                frame_path = os.path.join(frame_dir, f"frame_{frame_idx:03d}.png")
+                view.saveImage(frame_path, 1280, 720, "White")
+                frame_idx += 1
+
+    doc = App.ActiveDocument
+    if not doc:
+        App.Console.PrintError("No active document.\n")
+        return
+        
+    carrier = None
+    blade = None
+    for obj in doc.Objects:
+        if obj.Name.startswith("Carrier_Plate"):
+            carrier = obj
+        elif obj.Name.startswith("Blade_Clone"):
+            blade = obj
+    
+    if not carrier or not blade:
+        App.Console.PrintError("Carrier_Plate or Blade_Clone not found.\n")
+        return
+        
+    params = doc.getObject("Parametric_PCB")
+    if not params:
+        App.Console.PrintError("Parametric_PCB (Original) not found.\n")
+        return
+        
+    pcb_width = params.Width
+    rods = doc.getObject("Support_Rods")
+    rod_diameter = rods.Diameter if rods else 6.35
+    rod_gap = rods.Gap if rods else 2.0
+    rod_radius = rod_diameter / 2.0
+    
+    c_right_x = pcb_width - rod_radius
+    c_bottom_y = -(rod_gap + rod_radius)
+    center_of_rotation = App.Vector(c_right_x, c_bottom_y, 0)
+    
+    moving_parts = []
+    
+    for obj_name, obj in [("Carrier_Plate", carrier), ("Blade_Clone", blade)]:
+        if obj:
+            # Force recompute before grabbing placements just in case expressions are pending
+            doc.recompute()
+            moving_parts.append({"obj": obj, "orig": obj.Placement.copy(), "rotated": None})
+            obj.setExpression("Placement.Base.x", None)
+            obj.setExpression("Placement.Base.y", None)
+            obj.setExpression("Placement.Base.z", None)
+        
+    max_angle = 60.0
+    num_frames_rot = 16
+    
+    App.Console.PrintMessage("Swinging out...\n")
+    for i in range(num_frames_rot + 1):
+        angle = (i / num_frames_rot) * max_angle
+        rot = App.Rotation(App.Vector(0,0,1), angle)
+        rot_placement = App.Placement(App.Vector(0,0,0), rot, center_of_rotation)
+        
+        for item in moving_parts:
+            # Recreate from scratch every frame to avoid mutation bugs
+            item["obj"].Placement = rot_placement.multiply(item["orig"])
+            
+        capture_frame()
+    
+    for item in moving_parts:
+        item["rotated"] = item["obj"].Placement.copy()
+        
+    time.sleep(0.5)
+        
+    App.Console.PrintMessage("Pulling out of the slot...\n")
+    rad = math.radians(max_angle)
+    move_dir = App.Vector(-math.cos(rad), -math.sin(rad), 0)
+    
+    pull_steps = 8
+    rod_dia_val = rod_diameter.Value if hasattr(rod_diameter, 'Value') else float(rod_diameter)
+    step_dist = rod_dia_val / 4.0
+    
+    for i in range(pull_steps + 1):
+        dist = i * step_dist
+        # Manual scalar multiplication to avoid FreeCAD vector overload bugs!
+        trans = App.Vector(move_dir.x * dist, move_dir.y * dist, 0)
+        trans_placement = App.Placement(trans, App.Rotation())
+        
+        for item in moving_parts:
+            item["obj"].Placement = trans_placement.multiply(item["rotated"])
+            
+        capture_frame()
+        time.sleep(0.05)
+        
+    time.sleep(0.5)
+    
+    App.Console.PrintMessage("Sliding back in...\n")
+    slide_in_steps = pull_steps // 4
+    for i in range(slide_in_steps, -1, -1):
+        fraction = i / slide_in_steps
+        dist = fraction * (pull_steps * step_dist)
+        
+        trans = App.Vector(move_dir.x * dist, move_dir.y * dist, 0)
+        trans_placement = App.Placement(trans, App.Rotation())
+        
+        for item in moving_parts:
+            item["obj"].Placement = trans_placement.multiply(item["rotated"])
+            
+        capture_frame()
+        time.sleep(0.05)
+        
+    time.sleep(0.2)
+    
+    App.Console.PrintMessage("Swinging back in...\n")
+    swing_in_steps = num_frames_rot // 4
+    for i in range(swing_in_steps, -1, -1):
+        angle = (i / swing_in_steps) * max_angle
+        rot = App.Rotation(App.Vector(0,0,1), angle)
+        rot_placement = App.Placement(App.Vector(0,0,0), rot, center_of_rotation)
+        
+        for item in moving_parts:
+            item["obj"].Placement = rot_placement.multiply(item["orig"])
+            
+        capture_frame()
+
+    App.Console.PrintMessage("Animation complete!\n")
+    
+    if record_gif and frame_idx > 0:
+        palette_cmd = f"ffmpeg -v warning -y -i {frame_dir}/frame_%03d.png -vf palettegen {frame_dir}/palette.png"
+        os.system(palette_cmd)
+        
+        gif_cmd = f"ffmpeg -v warning -y -framerate 20 -i {frame_dir}/frame_%03d.png -i {frame_dir}/palette.png -lavfi paletteuse {gif_output}"
+        os.system(gif_cmd)
+        
+run_animation()
