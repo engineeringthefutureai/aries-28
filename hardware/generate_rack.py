@@ -31,6 +31,12 @@ for _module in (hardware_utils, pcb_generator, rods_generator, bead_generator,
     importlib.reload(_module)
 
 
+# How many bead positions the rack stacks, and how many of them carry a board.
+# The unoccupied ones sit at the top, so the stack still reads as a full rack.
+BAY_COUNT = 8
+OCCUPIED_BAYS = 6
+
+
 def _clear_document(doc):
     """Empty `doc` in place, keeping the document -- and its 3D view -- alive.
 
@@ -87,12 +93,13 @@ def build_rack_assembly():
     # carrier passes straight through them: the carrier is finalised, so the
     # bead is the part that gives way.
     beads = bead_generator.create_beads(pcb_original, rods, carrier_plate)
-    beads.Label = "Rack_Beads"
+    beads.Label = "Rack_Beads_Bay1"
     beads.setExpression("Placement.Base.z", f"{bottom_plate.Name}.Thickness")
 
     # 6. Drop the carrier clone into the bay, resting on the beads' web.
     carrier_clone = doc.addObject("App::Link", "Carrier_Clone")
     carrier_clone.LinkedObject = carrier_plate
+    carrier_clone.Label = "Carrier_Bay1"
     carrier_z = f"{bottom_plate.Name}.Thickness + {beads.Name}.WebHeight"
     carrier_clone.setExpression("Placement.Base.z", carrier_z)
 
@@ -104,12 +111,38 @@ def build_rack_assembly():
 
     blade_clone = doc.addObject("App::Link", "Blade_Clone")
     blade_clone.LinkedObject = blade_original
+    blade_clone.Label = "Blade_Bay1"
 
     # The board sits on the spacer bosses, which stand one carrier thickness
     # proud of the carrier's top face -- so two thicknesses above where the
     # carrier itself starts.
-    blade_clone.setExpression(
-        "Placement.Base.z", f"{carrier_z} + 2 * {carrier_plate.Name}.Thickness")
+    blade_z = f"{carrier_z} + 2 * {carrier_plate.Name}.Thickness"
+    blade_clone.setExpression("Placement.Base.z", blade_z)
+
+    # Stack the remaining bays. Each is one bead height above the last, which
+    # is what the bead's key registers, so the pitch comes from the bead
+    # itself rather than being counted out here.
+    pitch = f"{beads.Name}.Height"
+    for bay in range(2, BAY_COUNT + 1):
+        step = bay - 1
+        stacked = doc.addObject("App::Link", "Rack_Beads_Clone")
+        stacked.LinkedObject = beads
+        stacked.Label = f"Rack_Beads_Bay{bay}"
+        stacked.setExpression(
+            "Placement.Base.z", f"{bottom_plate.Name}.Thickness + {step} * {pitch}")
+
+        if bay > OCCUPIED_BAYS:
+            continue
+
+        seated = doc.addObject("App::Link", "Carrier_Clone")
+        seated.LinkedObject = carrier_plate
+        seated.Label = f"Carrier_Bay{bay}"
+        seated.setExpression("Placement.Base.z", f"{carrier_z} + {step} * {pitch}")
+
+        board = doc.addObject("App::Link", "Blade_Clone")
+        board.LinkedObject = blade_original
+        board.Label = f"Blade_Bay{bay}"
+        board.setExpression("Placement.Base.z", f"{blade_z} + {step} * {pitch}")
 
     # 8. Create Top Rack Plate
     top_plate = rack_plate_generator.create_rack_plate(pcb_original, rods)

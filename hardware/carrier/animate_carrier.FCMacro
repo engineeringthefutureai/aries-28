@@ -1,4 +1,4 @@
-"""Swing the carrier and its board out of the rack, as a visual check.
+"""Swing one bay's carrier and board out of the rack, as a visual check.
 
 Run from the FreeCAD GUI with the Rack_Assembly document open -- build it
 first with hardware/generate_rack.py. Set RECORD_GIF to also write an animated
@@ -25,6 +25,7 @@ import FreeCADGui as Gui
 RECORD_GIF = True
 FRAME_SIZE = (1280, 720)
 FRAME_RATE = 20
+BAY = 2              # which bay to take out, counting from the bottom
 SWING_ANGLE = 45.0   # degrees the carrier rotates about the front-right rod
 SWING_FRAMES = 16
 PULL_FRAMES = 8      # steps spent sliding the carrier off the rods
@@ -112,12 +113,14 @@ def run_animation():
         App.Console.PrintError("No active document.\n")
         return
 
-    # The clone is the one in the bay; the master is parked off the rack.
-    carrier = (hardware_utils.find_by_name(doc, "Carrier_Clone")
-               or hardware_utils.find_by_name(doc, "Carrier_Plate"))
-    blade = hardware_utils.find_by_name(doc, "Blade_Clone")
+    # Bay instances are labelled, not named: the clone in the bay is what
+    # moves, while the master stays parked off the rack.
+    carrier = hardware_utils.find_by_label(doc, f"Carrier_Bay{BAY}")
+    blade = hardware_utils.find_by_label(doc, f"Blade_Bay{BAY}")
     if not carrier or not blade:
-        App.Console.PrintError("Carrier_Plate or Blade_Clone not found.\n")
+        App.Console.PrintError(
+            f"Bay {BAY} is not occupied -- no Carrier_Bay{BAY}/Blade_Bay{BAY} "
+            "in this document.\n")
         return
 
     pivot, step_dist = _pivot_and_step(doc)

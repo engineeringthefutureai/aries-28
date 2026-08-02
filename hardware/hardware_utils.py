@@ -256,6 +256,16 @@ def fillet_corners(shape, corners, context=""):
     return shape
 
 
+def find_by_label(doc, label):
+    """The object carrying `label`, or None.
+
+    Bay instances are told apart by label rather than internal name: FreeCAD
+    numbers the names in creation order, which is not the order they stack in.
+    """
+    found = doc.getObjectsByLabel(label)
+    return found[0] if found else None
+
+
 def find_by_name(doc, prefix):
     """First object in `doc` whose internal name starts with `prefix`."""
     for obj in doc.Objects:

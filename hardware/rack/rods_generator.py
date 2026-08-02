@@ -28,7 +28,8 @@ class ParametricRods:
         # warn on every recompute about a link leaving its allowed scope.
         obj.addProperty("App::PropertyLinkGlobal", "Original_PCB", "Parameters", "Link to original PCB object")
 
-        obj.addProperty("App::PropertyLength", "Height", "Dimensions", "Height of the rods").Height = 254.0 # 10 inches (10 * 25.4)
+        # Bottom plate, eight bays, top plate: 3 + 8*30 + 3.
+        obj.addProperty("App::PropertyLength", "Height", "Dimensions", "Height of the rods").Height = 246.0
         obj.addProperty("App::PropertyLength", "Diameter", "Dimensions", "Diameter of the support rods").Diameter = hardware_utils.DEFAULT_ROD_DIAMETER
         obj.addProperty("App::PropertyLength", "Gap", "Dimensions", "Gap between rod and PCB").Gap = hardware_utils.DEFAULT_ROD_GAP
 
