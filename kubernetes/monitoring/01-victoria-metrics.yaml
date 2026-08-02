@@ -1,0 +1,191 @@
+# VictoriaMetrics (single-node) — the time-series database.
+#
+# Chosen over Prometheus per design-doc.md §5, which caps monitoring at
+# "metrics-server + Netdata; VictoriaMetrics later if historical graphs are
+# wanted; full Prometheus only if an 8GB node appears". VM is a single Go
+# binary that holds the same PromQL surface in roughly a fifth of the memory,
+# which is what makes historical graphs affordable on a 2GB control-plane node
+# that is also running etcd.
+#
+# It scrapes directly (no separate vmagent) — one less pod on a small fleet.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: victoria-metrics
+  namespace: monitoring
+---
+# Service discovery needs read access to the API, and scraping the kubelet
+# goes through the API server's node proxy (nodes/proxy).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: victoria-metrics
+rules:
+  - apiGroups: [""]
+    resources: [nodes, nodes/proxy, nodes/metrics, services, endpoints, pods]
+    verbs: [get, list, watch]
+  - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: victoria-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: victoria-metrics
+subjects:
+  - kind: ServiceAccount
+    name: victoria-metrics
+    namespace: monitoring
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: victoria-metrics-scrape
+  namespace: monitoring
+data:
+  scrape.yml: |
+    global:
+      scrape_interval: 30s        # 30s rather than 15s halves both CPU cost and
+                                  # disk growth, at resolution adequate here.
+
+    scrape_configs:
+      # ---- kubelet's own metrics (per-node, via the API server proxy) ----
+      - job_name: kubernetes-nodes
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/$1/proxy/metrics
+
+      # ---- cAdvisor: per-container CPU/memory, i.e. which pod is consuming
+      #      a given node's limited RAM ----
+      - job_name: kubernetes-cadvisor
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+
+      # ---- anything annotated prometheus.io/scrape: "true" ----
+      # This is how node-exporter and kube-state-metrics get picked up
+      # without naming them here (see 02-exporters.yaml).
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: victoria-metrics
+  namespace: monitoring
+spec:
+  selector: { app: victoria-metrics }
+  ports:
+    - name: http
+      port: 8428
+      targetPort: 8428
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: victoria-metrics
+  namespace: monitoring
+spec:
+  serviceName: victoria-metrics
+  replicas: 1
+  selector:
+    matchLabels: { app: victoria-metrics }
+  template:
+    metadata:
+      labels: { app: victoria-metrics }
+    spec:
+      serviceAccountName: victoria-metrics
+      # Follows the disk. The PV's nodeAffinity would enforce this anyway,
+      # but stating it here makes the intent readable without chasing volumes.
+      nodeSelector:
+        aries28/storage: nvme
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: victoria-metrics
+          # TODO: pin to a released tag.
+          image: victoriametrics/victoria-metrics:latest
+          args:
+            - -storageDataPath=/storage
+            - -retentionPeriod=3            # months; ~3 months of a 4-node fleet
+                                            # is well under 1GB at 30s scrape
+            - -promscrape.config=/config/scrape.yml
+            - -httpListenAddr=:8428
+            - -memory.allowedPercent=60     # VM sizes its cache from the LIMIT
+                                            # below; without this it assumes it
+                                            # owns the whole node and gets OOMKilled
+          ports:
+            - name: http
+              containerPort: 8428
+          volumeMounts:
+            - { name: storage, mountPath: /storage }
+            - { name: scrape-config, mountPath: /config }
+          resources:
+            requests: { cpu: "100m", memory: "192Mi" }
+            limits:   { cpu: "1000m", memory: "512Mi" }
+          readinessProbe:
+            httpGet: { path: /health, port: 8428 }
+            initialDelaySeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 8428 }
+            initialDelaySeconds: 30
+      volumes:
+        - name: scrape-config
+          configMap: { name: victoria-metrics-scrape }
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: aries-nvme
+        resources:
+          requests: { storage: 20Gi }

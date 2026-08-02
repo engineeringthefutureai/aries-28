@@ -1,0 +1,167 @@
+# Grafana — the dashboard layer.
+#
+# Placement: steered away from control-plane nodes. Grafana needs RAM and is
+# indifferent to disk, while the control-plane node holds the NVMe but has only
+# 2GB and is already carrying etcd. The 4GB workers are the better host. The
+# rule is soft (preferred), so a single-node cluster still schedules it.
+#
+# Persistence: a small PVC on the DEFAULT StorageClass (local-path, i.e. the SD
+# card), deliberately different from the metrics database's NVMe treatment.
+# Grafana's SQLite file holds dashboards and users — a few MB written rarely —
+# so it does not carry the SD-wear objection that governs
+# 00-namespace-and-storage.yaml. Dashboards authored here should still be
+# exported to JSON and committed (design-doc.md §5.1); the volume exists so a
+# restart does not discard dashboards imported by ID.
+#
+# Admin credentials are deliberately NOT stored in this file. Create the Secret
+# out of band before applying:
+#
+#   kubectl -n monitoring create secret generic grafana-admin \
+#     --from-literal=admin-user=admin \
+#     --from-literal=admin-password='<choose-a-password>'
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      # VictoriaMetrics speaks the Prometheus query API, so Grafana talks to it
+      # with the stock Prometheus datasource — no plugin needed. This is the
+      # practical payoff of the VM-over-Prometheus choice: identical PromQL,
+      # identical dashboards, a fifth of the memory.
+      - name: VictoriaMetrics
+        type: prometheus
+        access: proxy
+        url: http://victoria-metrics.monitoring.svc:8428
+        isDefault: true
+        jsonData:
+          timeInterval: 30s     # match the scrape interval so rate() behaves
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-storage
+  namespace: monitoring
+spec:
+  accessModes: [ReadWriteOnce]
+  # No storageClassName: uses the cluster default (k3s local-path). Unlike the
+  # metrics DB, this is a few MB of config written rarely — SD is fine.
+  resources:
+    requests: { storage: 2Gi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  # Recreate, not RollingUpdate: the PVC below is ReadWriteOnce, so a new pod
+  # cannot attach the volume until the old one has fully released it. A
+  # rolling update would deadlock waiting for a volume it can never get.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: grafana }
+  template:
+    metadata:
+      labels: { app: grafana }
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+      securityContext:
+        runAsUser: 472        # grafana's own uid
+        fsGroup: 472
+      containers:
+        - name: grafana
+          # TODO: pin to a released tag.
+          image: grafana/grafana:latest
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef: { name: grafana-admin, key: admin-user }
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: grafana-admin, key: admin-password }
+            # GF_SERVER_ROOT_URL is intentionally unset. Pinning it to a single
+            # hostname breaks redirects on the other access paths, and this
+            # instance is reachable three ways (NodePort, ingress hostname,
+            # port-forward). Left unset, Grafana infers the URL per request.
+            - name: GF_ANALYTICS_REPORTING_ENABLED
+              value: "false"
+            - name: GF_ANALYTICS_CHECK_FOR_UPDATES
+              value: "false"
+          ports:
+            - { name: http, containerPort: 3000 }
+          volumeMounts:
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: storage
+              mountPath: /var/lib/grafana
+          resources:
+            requests: { cpu: "50m", memory: "192Mi" }
+            # 512Mi: Grafana exceeds 320Mi on arm64 once dashboards are loaded
+            # and is OOMKilled at that limit. The 4GB workers have the headroom.
+            limits:   { cpu: "500m", memory: "512Mi" }
+          readinessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            # Grafana initializes its SQLite database on first start, which is
+            # slow on a Pi; a 15s delay reports failure during normal startup.
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 6
+      volumes:
+        - name: datasources
+          configMap: { name: grafana-datasources }
+        - name: storage
+          persistentVolumeClaim:
+            claimName: grafana-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  # NodePort so Grafana is reachable at http://<any-node-ip>:30300 without
+  # port-forwarding and without DNS. Every node answers on this port, not only
+  # the one running the pod — kube-proxy forwards internally.
+  #
+  # The Ingress below works in parallel; hostname routing
+  # (docs/dns-and-exposure.md) is the primary access path.
+  type: NodePort
+  selector: { app: grafana }
+  ports:
+    - port: 80
+      targetPort: 3000
+      nodePort: 30300      # valid range is 30000-32767
+---
+# Exposed by hostname through Traefik (ships with k3s), following the pattern
+# in docs/dns-and-exposure.md — no NodePort, no per-service port to remember.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  rules:
+    - host: grafana.aries.lan
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 80

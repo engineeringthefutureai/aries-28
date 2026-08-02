@@ -1,0 +1,55 @@
+# Monitoring namespace + storage for the metrics database.
+#
+# Why a dedicated PersistentVolume instead of the default StorageClass:
+# k3s ships local-path as the default provisioner, and it writes to
+# /var/lib/rancher/k3s/storage — which is on the SD card. A time-series
+# database is a continuous small-write workload, i.e. exactly what wears SD
+# cards out. This is the same reasoning docs/node-setup.md §2 uses to put
+# etcd on NVMe; the metrics DB earns the same treatment.
+#
+# The volume is bound by node LABEL, not hostname, so this manifest stays
+# valid as the fleet grows and cp-1 stops being the only NVMe node
+# (design-doc.md §4.3 — every k3s server eventually gets one).
+#
+# Prerequisites on the NVMe node, before applying:
+#   sudo mkdir -p /mnt/data/victoria-metrics
+#   kubectl label node <nvme-node> aries28/storage=nvme
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+# no-provisioner: nothing dynamically creates these volumes; they are declared
+# explicitly below.
+# WaitForFirstConsumer: don't bind the PV until a pod is scheduled, so the
+# scheduler places the pod first and the volume follows it — the reverse order
+# would let the pod land on a node where the disk doesn't exist.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: aries-nvme
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: victoria-metrics-data
+spec:
+  capacity: { storage: 20Gi }
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain   # keep the data if the claim is deleted
+  storageClassName: aries-nvme
+  local:
+    path: /mnt/data/victoria-metrics
+  # 'local' volumes require nodeAffinity — this is what pins the TSDB to the
+  # machine that physically holds the disk.
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: aries28/storage
+              operator: In
+              values: [nvme]

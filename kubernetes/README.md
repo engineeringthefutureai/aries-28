@@ -29,6 +29,15 @@ The example uses a stock `nginx:alpine` image serving its default page.
 Replace the image or mount your own content to serve something real; the
 manifest requires no external repository.
 
+## `monitoring/`
+
+Historical metrics and dashboards — VictoriaMetrics as the time-series
+database, Grafana as the dashboard layer, node-exporter and kube-state-metrics
+as the sources. Sized to run on 2GB single-board computers, with the database
+pinned to NVMe so it does not wear out an SD card. See
+[`monitoring/README.md`](monitoring/README.md) for the rationale, prerequisites,
+and apply order.
+
 ## Deploying your own services
 
 Adding a service is a single declarative step (see the DNS/exposure doc §4):

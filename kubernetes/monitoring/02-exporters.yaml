@@ -1,0 +1,142 @@
+# Exporters — the things that actually produce metrics.
+#
+# node-exporter        : per-node hardware/OS metrics (one pod per node)
+# kube-state-metrics   : cluster object state (deployments, pods, nodes...)
+#
+# Both are discovered by VictoriaMetrics through the prometheus.io/scrape
+# annotation, not by being named in a scrape config (see 01-*.yaml).
+#
+# Relevant to the thermal questions in design-doc.md §3.3.1: node-exporter's
+# hwmon collector exposes node_hwmon_temp_celsius, which on a Pi is the SoC
+# temperature — the same value `vcgencmd measure_temp` reports, but recorded
+# per node and over time. Continuous per-node temperature is what the airflow
+# model needs to be validated against, rather than spot measurements.
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels: { app: node-exporter }
+  template:
+    metadata:
+      labels: { app: node-exporter }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      hostNetwork: true     # report the node's real network, not the pod's
+      hostPID: true
+      # Run everywhere, including any tainted control-plane node, otherwise
+      # the node you most want to watch is the one you cannot see.
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: node-exporter
+          # TODO: pin to a released tag.
+          image: quay.io/prometheus/node-exporter:latest
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+            - --path.rootfs=/host/root
+            # Ignore virtual/container filesystems so disk panels show real disks
+            - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+          ports:
+            - name: metrics
+              containerPort: 9100
+              hostPort: 9100
+          resources:
+            requests: { cpu: "20m", memory: "24Mi" }
+            limits:   { cpu: "200m", memory: "64Mi" }
+          volumeMounts:
+            - { name: proc,   mountPath: /host/proc, readOnly: true }
+            - { name: sys,    mountPath: /host/sys,  readOnly: true }
+            - { name: rootfs, mountPath: /host/root, readOnly: true, mountPropagation: HostToContainer }
+      volumes:
+        - name: proc
+          hostPath: { path: /proc }
+        - name: sys
+          hostPath: { path: /sys }
+        - name: rootfs
+          hostPath: { path: / }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-state-metrics
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kube-state-metrics
+rules:
+  - apiGroups: [""]
+    resources: [configmaps, secrets, nodes, pods, services, resourcequotas,
+                replicationcontrollers, limitranges, persistentvolumeclaims,
+                persistentvolumes, namespaces, endpoints]
+    verbs: [list, watch]
+  - apiGroups: [apps]
+    resources: [statefulsets, daemonsets, deployments, replicasets]
+    verbs: [list, watch]
+  - apiGroups: [batch]
+    resources: [cronjobs, jobs]
+    verbs: [list, watch]
+  - apiGroups: [autoscaling]
+    resources: [horizontalpodautoscalers]
+    verbs: [list, watch]
+  - apiGroups: [policy]
+    resources: [poddisruptionbudgets]
+    verbs: [list, watch]
+  - apiGroups: [storage.k8s.io]
+    resources: [storageclasses, volumeattachments]
+    verbs: [list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies, ingresses]
+    verbs: [list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-state-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-state-metrics
+subjects:
+  - kind: ServiceAccount
+    name: kube-state-metrics
+    namespace: monitoring
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-state-metrics
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: kube-state-metrics }
+  template:
+    metadata:
+      labels: { app: kube-state-metrics }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: kube-state-metrics
+      containers:
+        - name: kube-state-metrics
+          # TODO: pin to a released tag.
+          image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.1
+          ports:
+            - { name: metrics, containerPort: 8080 }
+            - { name: telemetry, containerPort: 8081 }
+          resources:
+            requests: { cpu: "20m", memory: "48Mi" }
+            limits:   { cpu: "200m", memory: "128Mi" }
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8081 }
+            initialDelaySeconds: 5
