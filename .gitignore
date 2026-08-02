@@ -24,6 +24,13 @@ ansible/**/vault*
 *.retry
 ansible/inventory/*.local
 
+# Python — the hardware generator scripts (hardware/*.py) leave these behind
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
 # Build / slicer artifacts
 *.gcode
 *.3mf
