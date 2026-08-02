@@ -12,15 +12,24 @@ See the fabrication legend in [`../README.md`](../README.md) for method tags and
 | File | Route | Purpose |
 |---|---|---|
 | `rack-top-bottom.svg` | `[SHEET]` | Laser-cut top and bottom plates for the rod-and-bead cartridge (`docs/rack-design.md` §4), with the rod holes that seat the four 6.35mm rods. |
+| `rack-bead-30.stl` | `[PRINT]` | The bead for the 30mm bay: four tubes on a shared base, keyed so a stack cannot rotate out of register. PETG. Named for the pitch it sets — the 42mm bay is still to come. |
+| `bead_generator.py` | — | Generator for the bead above. |
+| `rack_plate_generator.py`, `rods_generator.py` | — | Generators for the plates and the rods. |
 
-Bead files (`[PRINT]`) are pending. `rack-top-bottom.svg` is a single-color, cut-only file (no engrave layer, unlike the carrier) — Shaper Origin–specific metadata from the authoring tool has been stripped, same as `carrier-rpi-b.svg` (see that README's laser-color-convention note).
+**Both fabrication files above are exports from the parametric model, not drawings maintained here** — see [`../MODEL.md`](../MODEL.md) for how to run it and re-export. Change the generator, not the `.svg` or the `.stl`.
+
+`rack-top-bottom.svg` is a single-color, cut-only file (no engrave layer, unlike the carrier). It carries no Shaper Origin metadata; it is a plain FreeCAD export whose stroke colour is set to the cut-layer convention described in [`../carrier/README.md`](../carrier/README.md).
 
 ## Status
-In progress. The top/bottom plates moved from a printed STL to the laser-cut `rack-top-bottom.svg` above; the two bay pitches are set — 30 mm (dense/compute) and 42 mm (extended/expansion). See `docs/rack-design.md`.
+In progress. The top/bottom plates moved from a printed STL to the laser-cut `rack-top-bottom.svg` above; the two bay pitches are set — 30 mm (dense/compute) and 42 mm (extended/expansion). The whole cartridge is now generated (see [`../MODEL.md`](../MODEL.md)), and the pitch is a single parameter: the bead's `Height`. See `docs/rack-design.md`.
 
-**Rod-hole placement is a shared interface — critical.** The rod holes in `rack-top-bottom.svg` and the carrier's rod/pivot bores in [`../carrier/carrier-rpi-b.svg`](../carrier/carrier-rpi-b.svg) must agree on rod spacing; they're designed together, not independently, since a carrier that doesn't ride the same four rods as the plates it mounts between can't engage the rack. Any change to one requires checking the other. **Confirmed by an initial fit test:** plywood test-cuts of both files threaded cleanly onto the real 6.35mm rods, three carriers each holding a Pi 5.
+**Rod-hole placement is a shared interface — critical.** The rod holes in the plates and the carrier's rod/pivot bores must agree on rod spacing; a carrier that doesn't ride the same four rods as the plates it mounts between can't engage the rack. That agreement is now structural rather than a matter of care: both come from `calculate_rod_centers()` in the model, so the two cannot drift apart. Any change to rod placement is a change to that one function.
 
-**Next milestone — beads.** This fit test only proves the rod-hole interface; it did not use beads, which is where the actual bay pitch (30/42mm spacing between carriers), the swing/latch mechanism, and rack engagement all live (`docs/rack-design.md` §4, §7). Designing and printing the beads, then assembling plates + rods + beads + carriers into one working cartridge, is the next step — not yet done.
+**The earlier fit test no longer certifies these files.** Plywood test-cuts of the *previous* SVG pair threaded cleanly onto the real 6.35mm rods, three carriers each holding a Pi 5 — that proved the rod-hole interface as it stood then. The model was not built to reproduce that geometry (its rod gap and front-left rod position both differ), and both files have since been re-exported from it. The interface is self-consistent, but the current geometry is unproven in plywood.
+
+**Next milestone — assembly.** The beads now exist and print (`rack-bead-30.stl`): they set the bay pitch, key into each other, and are relieved for the carrier's swing. What has not happened is putting plates + rods + beads + carriers together into one working cartridge and confirming a carrier actually swings out of a populated rack. Known gaps that will bite there — the 0.5mm bead-to-board clip, the top plate's four blind key holes not yet being modelled, and whether 45° of swing is enough to extract a carrier at all — are listed in [`../MODEL.md`](../MODEL.md#known-gaps).
+
+**The top plate needs four holes that are not in the SVG.** The topmost bead keys into the top plate, and those holes are blind — a laser cuts through, and a through-hole would show on the rack's outside face — so they are drilled by hand after cutting. `rack-top-bottom.svg` is one file for both plates and deliberately does not carry them. See `docs/rack-design.md` §4.
 
 ## Dependencies
 - Carrier — defines the rack-facing interface (rod/bead or slide); shares rod-hole placement with the top/bottom plates (see above).

@@ -59,9 +59,16 @@ Use **PETG**, not PLA, for the printed carrier:
 
 | File | Route | Purpose |
 |---|---|---|
-| `carrier-rpi-b.svg` | `[SHEET]` | Laser-cut carrier for the Pi 3B/4B/5 shared footprint. Its rod/pivot bores share rod-hole placement with [`../rack/rack-top-bottom.svg`](../rack/rack-top-bottom.svg) — designed together, not independently; see that README's note before changing either. Nests the vertical-isolation spacers as cutouts within the same file — one laser pass produces the carrier plate and its spacers together, no separate spacer part to cut. |
+| `carrier-rpi-b.svg` | `[SHEET]` | Laser-cut carrier for the Pi 3B/4B/5 shared footprint. Its rod/pivot bores share rod-hole placement with [`../rack/rack-top-bottom.svg`](../rack/rack-top-bottom.svg); both come from the same function in the model, so they cannot drift apart. Nests the vertical-isolation spacers as cutouts within the same file — one laser pass produces the carrier plate and its spacers together, no separate spacer part to cut. |
+| `carrier_plate_generator.py` | — | Generator for the carrier: hook on the left, fork on the right, spacer bosses for the board. |
+| `pcb_generator.py` | — | The board and its port block — **the parameter source for the whole model**. Board size, hole spacing and hole diameter are set here and everything else follows. |
+| `animate_carrier.FCMacro` | — | Swings one bay's carrier and board out of the rack, to check the mechanism. FreeCAD GUI only; `BAY` picks which bay. |
 
-Printed (`[PRINT]`) route: STL pending. It will integrate the spacers directly into the printed part (bosses, no separate pieces) rather than mirroring the sheet route's nested-cutout approach — see the fabrication table above.
+**`carrier-rpi-b.svg` is an export from the parametric model, not a drawing maintained here** — see [`../MODEL.md`](../MODEL.md). Change the generator and re-export; edits made directly to the SVG will be lost.
+
+Printed (`[PRINT]`) route: STL pending. The model already builds the spacers as bosses integrated into the plate rather than separate pieces, which is what the printed part wants — the sheet route's nested cutouts are the adaptation, not the other way round.
+
+The board's mounting pattern follows the Pi 3B/4B/5 footprint: M2.5 holes on 58 × 49mm, 3.5mm in from each edge of an 85 × 56mm board. Those are `pcb_generator.py`'s defaults; a different board is a different set of numbers there, not a different carrier design.
 
 ### Laser color convention (cut vs. engrave)
 
@@ -71,9 +78,13 @@ Printed (`[PRINT]`) route: STL pending. It will integrate the spacers directly i
 
 Each program only auto-*groups* paths by color; you still assign Cut vs. Engrave to each color-layer once inside the software. In LightBurn that assignment persists across re-imports of an updated SVG as long as the colors stay consistent, so this is a one-time setup per color, not per re-export.
 
-The file previously carried Shaper Origin–specific metadata (`xmlns:shaper` namespace, `shaper:cutType`/`cutOffset`/`toolDia` on every path) left over from the tool it was authored in. This has been stripped — consistent with the project's "fabrication by requirement, not by tool" approach (`../README.md`) — so the file no longer assumes a specific machine.
+The file has repeatedly carried Shaper Origin–specific metadata (`xmlns:shaper` namespace, `shaper:cutType`/`cutOffset`/`toolDia` on every path) picked up from passing through that tool. It is stripped whenever it reappears — consistent with the project's "fabrication by requirement, not by tool" approach (`../README.md`) — so the file does not assume a specific machine. Worth checking after any round-trip through Shaper.
 
-Note: these are current working files, not final released parts. The bay pitches are set at 30 mm (standard) / 42 mm (extended). **Rod-hole fit confirmed:** an initial fit test — three carrier plates (plywood test-cut) threaded onto the real 6.35mm rods alongside `rack-top-bottom.svg`'s plates, each carrying a Pi 5 — passed, validating that the carrier's rod bores and the plates' rod holes agree (the shared-interface risk noted above). Beads, which set the actual bay pitch and provide the rack engagement/latch, are not yet designed or printed — assembling carrier + plates + beads together into a working cartridge is the next milestone, not this test. A dimensioned reference drawing will be added as the design is finalized.
+Note: these are current working files, not final released parts. The bay pitches are set at 30 mm (standard) / 42 mm (extended).
+
+**The earlier fit test does not cover this file.** Three plywood carrier plates threaded onto the real 6.35mm rods alongside the plates, each carrying a Pi 5 — that passed, and validated the rod-hole interface *as it stood then*. The parametric model was not built to reproduce that geometry, and this SVG has since been re-exported from it, so the rod placement is no longer the placement that was tested. Carrier and plates still agree with each other by construction (both read `calculate_rod_centers()`), but the pair is unproven in plywood. A dimensioned reference drawing will be added as the design is finalized.
+
+Beads now exist and print — see [`../rack/README.md`](../rack/README.md). Assembling carrier + plates + beads + rods into one working cartridge, and confirming a carrier swings out of a populated rack, is the outstanding milestone.
 
 Board variants are named by **hole-pattern group**, not by individual board, since the Pi 3B/4B/5 share one 85×56mm footprint and M2.5 holes on 58×49mm — one carrier fits all three (`design-doc.md` §3.2):
 - `carrier-rpi-b.*` — Pi 3B / 4B / 5 (shared footprint)

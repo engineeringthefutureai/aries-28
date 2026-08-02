@@ -2,9 +2,17 @@
 
 Fabrication files for Aries 28, organized **by part**. Each part has its own folder containing a `README.md` and all of its file-format options side by side. A part may offer several fabrication routes (for example a 3D-printable `.stl` and a laser/CNC `.svg`); these are **options, not competing versions** — the part's README explains which route each file serves and what is decided or open.
 
+## The rod-and-bead rack is generated
+
+Plates, rods, beads, the carrier, and the board they hold are built by a suite of Python scripts that run inside FreeCAD. The `.svg` and `.stl` files for those parts are **exports from that model**, not drawings maintained by hand: a change goes into the generator, and the cut files are re-exported. See [`MODEL.md`](MODEL.md) for how to run it, what each generator builds, and which gaps are known and still open.
+
+Everything else here — panels, frame, power bay, and the rest — is still specified directly, as below.
+
 ## Fabrication is specified by requirement, not by tool
 
 Files here are references. The **requirement** — material, dimensions, tolerances, hole positions — is the specification. Any process that meets it is valid: a CO2 or diode laser, a CNC router, or hand tools (saw and drill press) following the drawing. Where a dimensioned drawing is provided, it is the authority; the `.svg`/`.stl`/`.step` files are conveniences for specific routes.
+
+For the generated parts this is unchanged in spirit but sharper in practice: the model carries the requirement, and its exports are one more convenience alongside the drawing. Where an export and the model disagree, the export is stale.
 
 ## Method legend
 
@@ -24,9 +32,9 @@ Files here are references. The **requirement** — material, dimensions, toleran
 
 | Part | Folder | Purpose | Routes | Status |
 |---|---|---|---|---|
-| Carrier | [`carrier/`](carrier/) | Holds one SBC; mounts into the rack | `[PRINT]` / `[SHEET]` | SHEET provided (`carrier-rpi-b.svg`, spacers nested); PRINT STL pending |
+| Carrier | [`carrier/`](carrier/) | Holds one SBC; mounts into the rack | `[PRINT]` / `[SHEET]` | generated; SHEET exported (`carrier-rpi-b.svg`, spacers nested); PRINT STL pending |
 | Spacer | [`spacer/`](spacer/) | Lifts a board off a sheet carrier | `[SHEET]` / `[PRINT]` | superseded for SHEET route — nested in the carrier SVG; see carrier |
-| Rack | [`rack/`](rack/) | Cartridge of bays at one pitch (30 mm or 42 mm) | `[SHEET]` / `[PRINT]` / `[BUY]` | plates + carrier rod-hole fit confirmed by initial test; beads (next milestone) pending |
+| Rack | [`rack/`](rack/) | Cartridge of bays at one pitch (30 mm or 42 mm) | `[SHEET]` / `[PRINT]` / `[BUY]` | generated; plates exported, beads designed and printable (`rack-bead-30.stl`); cartridge not yet assembled |
 | Panels | [`panels/`](panels/) | Enclosure walls (show/solid faces) | `[SHEET]` | pending; optional layer |
 | Frame | [`frame/`](frame/) | 2020 extrusion skeleton + corners | `[BUY]` | specified (cut plan pending) |
 | Power bay | [`power-bay/`](power-bay/) | PSU/fuse/distribution mounting | `[PRINT]` / `[BUY]` | pending |
@@ -34,4 +42,4 @@ Files here are references. The **requirement** — material, dimensions, toleran
 | Cable brace | [`cable-brace/`](cable-brace/) | Parallel-run holder + service-loop park | `[PRINT]` | pending |
 | Connection panel | [`connection-panel/`](connection-panel/) | External I/O face (inlet, soft-power toggle, Decora) | `[SHEET]` + `[BUY]` | specified (Decora + keystones) |
 
-Statuses are indicative and will change as the build progresses. "Pending" means the requirement is described in the design docs but no fabrication file has been finalized.
+Statuses are indicative and will change as the build progresses. "Pending" means the requirement is described in the design docs but no fabrication file has been finalized. "Generated" means the part comes out of the model described in [`MODEL.md`](MODEL.md), and the files in its folder are exports from it.
