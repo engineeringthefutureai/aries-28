@@ -20,13 +20,13 @@ if _HARDWARE_ROOT not in sys.path:
 
 import hardware_utils
 from carrier import carrier_plate_generator, pcb_generator
-from rack import rack_plate_generator, rods_generator
+from rack import bead_generator, rack_plate_generator, rods_generator
 
 # Force FreeCAD to reload the latest scripts from disk -- without this, a GUI
 # session that has already imported them keeps running the old code.
 # hardware_utils comes first: every generator holds a reference to it, and
 # reloading it in place is what makes edits to the shared rod math take effect.
-for _module in (hardware_utils, pcb_generator, rods_generator,
+for _module in (hardware_utils, pcb_generator, rods_generator, bead_generator,
                 rack_plate_generator, carrier_plate_generator):
     importlib.reload(_module)
 
@@ -67,19 +67,36 @@ def build_rack_assembly():
     bottom_plate = rack_plate_generator.create_rack_plate(pcb_original, rods)
     bottom_plate.Label = "Bottom_Rack_Plate"
 
-    # 4. Create Carrier Plate
+    # 4. Create the carrier master, parked in front of the rack. Like the
+    # blade, only its clone goes into the bay -- see step 6. That split is what
+    # lets the beads be carved by the carrier while the carrier's seat height
+    # still comes from the beads: the master feeds the beads, the beads feed
+    # the clone, and nothing depends on itself.
     carrier_plate = carrier_plate_generator.create_carrier_plate(pcb_original, rods)
-    carrier_plate.Label = "Carrier_Plate"
-
-    # 5. Set Carrier Plate Z.
-    # NOTE: this leaves one carrier thickness of air between the top face of
-    # the bottom plate and the underside of the carrier. Placeholder standoff
-    # until the beads that set the real bay pitch exist -- see rack/README.md.
+    carrier_plate.Label = "Carrier_Original"
     carrier_plate.setExpression(
-        "Placement.Base.z",
-        f"{bottom_plate.Name}.Thickness + {carrier_plate.Name}.Thickness")
+        "Placement.Base.y", f"-({pcb_original.Name}.Length + 6 * {rods.Name}.Diameter)")
 
-    # 6. Create a SINGLE Clone for the entire Blade_Original (PCB + Ports).
+    # Hidden like the blade master: it is a source for the beads and the clone,
+    # not something to look at. An App::Link draws its target regardless of the
+    # target's own visibility, so the clone still shows.
+    if App.GuiUp:
+        carrier_plate.ViewObject.Visibility = False
+
+    # 5. Stack the beads on the bottom plate. They set the bay pitch, and the
+    # carrier passes straight through them: the carrier is finalised, so the
+    # bead is the part that gives way.
+    beads = bead_generator.create_beads(pcb_original, rods, carrier_plate)
+    beads.Label = "Rack_Beads"
+    beads.setExpression("Placement.Base.z", f"{bottom_plate.Name}.Thickness")
+
+    # 6. Drop the carrier clone into the bay, resting on the beads' web.
+    carrier_clone = doc.addObject("App::Link", "Carrier_Clone")
+    carrier_clone.LinkedObject = carrier_plate
+    carrier_z = f"{bottom_plate.Name}.Thickness + {beads.Name}.WebHeight"
+    carrier_clone.setExpression("Placement.Base.z", carrier_z)
+
+    # 7. Create a SINGLE Clone for the entire Blade_Original (PCB + Ports).
     # The original is parked off to the side as the editable master; the clone
     # is the instance that sits in the rack.
     blade_original.setExpression(
@@ -88,13 +105,13 @@ def build_rack_assembly():
     blade_clone = doc.addObject("App::Link", "Blade_Clone")
     blade_clone.LinkedObject = blade_original
 
-    # 3 x carrier thickness clears the plate plus the spacers standing on it,
-    # which reach one plate thickness above its top face.
+    # The board sits on the spacer bosses, which stand one carrier thickness
+    # proud of the carrier's top face -- so two thicknesses above where the
+    # carrier itself starts.
     blade_clone.setExpression(
-        "Placement.Base.z",
-        f"{bottom_plate.Name}.Thickness + 3 * {carrier_plate.Name}.Thickness")
+        "Placement.Base.z", f"{carrier_z} + 2 * {carrier_plate.Name}.Thickness")
 
-    # 7. Create Top Rack Plate
+    # 8. Create Top Rack Plate
     top_plate = rack_plate_generator.create_rack_plate(pcb_original, rods)
     top_plate.Label = "Top_Rack_Plate"
     top_plate.setExpression("Thickness", f"{bottom_plate.Name}.Thickness")

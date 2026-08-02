@@ -25,7 +25,7 @@ import FreeCADGui as Gui
 RECORD_GIF = True
 FRAME_SIZE = (1280, 720)
 FRAME_RATE = 20
-SWING_ANGLE = 60.0   # degrees the carrier rotates about the front-right rod
+SWING_ANGLE = 45.0   # degrees the carrier rotates about the front-right rod
 SWING_FRAMES = 16
 PULL_FRAMES = 8      # steps spent sliding the carrier off the rods
 RETURN_SPEEDUP = 4   # the return legs play back this many times faster
@@ -112,7 +112,9 @@ def run_animation():
         App.Console.PrintError("No active document.\n")
         return
 
-    carrier = hardware_utils.find_by_name(doc, "Carrier_Plate")
+    # The clone is the one in the bay; the master is parked off the rack.
+    carrier = (hardware_utils.find_by_name(doc, "Carrier_Clone")
+               or hardware_utils.find_by_name(doc, "Carrier_Plate"))
     blade = hardware_utils.find_by_name(doc, "Blade_Clone")
     if not carrier or not blade:
         App.Console.PrintError("Carrier_Plate or Blade_Clone not found.\n")

@@ -32,11 +32,38 @@ CARRIER_FRONT_RIGHT_FILLET = 0.5
 # is rounded harder than its rear-left counterpart.
 CARRIER_HOOK_TIP_FILLET = 1.5
 CARRIER_SLANT_FILLET = 0.5
+# The front-right lead-in tab, which guides the pivot rod into the fork. Its
+# outer edge is one arc leaving the rod hole tangentially at the hole's lowest
+# point, so there is no flat ledge between the two. Must exceed 0.5 or the arc
+# never reaches the plate's front edge and the tab does not close.
+CARRIER_LEAD_IN_RADIUS = 0.6
+CARRIER_LEAD_IN_TIP_FILLET = 0.45
 # Deliberately not equal to the fillets above: where two tangent fillets of the
 # same radius meet, OpenCASCADE produces a degenerate face and the operation
 # fails, so the corners adjoining one are rounded slightly smaller.
 CARRIER_SLOT_FILLET = 0.45
 CARRIER_HOOK_FILLET = 0.45
+
+# Rounding on the corners a rear bead's half-cut leaves against its outer
+# wall, as a multiple of the tube wall thickness.
+BEAD_HALF_CUT_FILLET = 0.4
+# The matching corners where that cut meets the bore, as a fraction of the
+# outer corner's fillet. Half of it: enough to break the edge that hugs the
+# rod, and to survive slicing, without eating into the seat the rod runs on.
+BEAD_BORE_FILLET_RATIO = 0.5
+
+# The front openings' top-slice edges, as a fraction of the rear half-cut
+# fillet above. Deliberately smaller: these edges die into the lofted
+# transition, and past roughly half a millimetre OpenCASCADE cannot run the
+# rolling ball out at that junction and refuses the fillet outright.
+BEAD_OPENING_FILLET_RATIO = 0.4
+
+# The base's discs are grown past the tube wall so the stacking key holes have
+# material around them, measured in rod diameters across.
+BEAD_BASE_DIAMETER_FACTOR = 2.0
+
+# How wide the front-left tube is opened above the carrier, in degrees.
+BEAD_TOP_OPENING_ANGLE = 135.0
 
 # How far a cutting solid pokes out past each face it cuts through.
 CUT_OVERSHOOT = 0.01
@@ -159,6 +186,32 @@ def through_prism(face, thickness):
     return face.extrude(App.Vector(0, 0, thickness + 2 * CUT_OVERSHOOT))
 
 
+def refined(shape):
+    """Merge the face splits that boolean operations leave behind.
+
+    Fusing solids keeps every intersection curve as an edge, so a part built
+    from overlapping primitives ends up with its flat faces diced into
+    fragments that show as seams. This unifies faces lying on the same
+    surface; it is purely cosmetic and must not change the volume.
+
+    Falls back to the unrefined shape if OpenCASCADE refuses, since a seam is
+    a far better outcome than no part at all.
+    """
+    try:
+        result = shape.removeSplitter()
+    except Exception as exc:
+        App.Console.PrintWarning(f"Shape refine failed, leaving seams: {exc}\n")
+        return shape
+    # Scale the tolerance to the part: merging spline faces perturbs the volume
+    # in the last bits, and on a part of any size that dwarfs a fixed epsilon.
+    # A refine that actually changed the geometry would be off by far more.
+    tolerance = max(1e-6, abs(shape.Volume) * 1e-7)
+    if not result.isValid() or abs(result.Volume - shape.Volume) > tolerance:
+        App.Console.PrintWarning("Shape refine changed the solid; keeping the original.\n")
+        return shape
+    return result
+
+
 def vertical_edges(shape):
     """Every edge of `shape` running parallel to Z -- a plate's corner edges."""
     found = []
@@ -185,7 +238,7 @@ def fillet_corners(shape, corners, context=""):
     `corners` is a sequence of (x, y, radius). Entries with a non-positive
     radius are skipped, as are corners no longer present on the shape. A
     fillet OpenCASCADE refuses is reported and left square rather than
-    aborting the whole plate.
+    aborting the whole part.
     """
     for cx, cy, radius in corners:
         if radius <= 0:
@@ -211,18 +264,21 @@ def find_by_name(doc, prefix):
     return None
 
 
-def link_parameters(obj, pcb_object=None, rods_object=None):
-    """Populate `obj`'s Original_PCB / Support_Rods links.
+def link_parameters(obj, pcb_object=None, rods_object=None, carrier_object=None):
+    """Populate `obj`'s Original_PCB / Support_Rods / Carrier_Plate links.
 
     Anything not passed explicitly is looked up in the object's own document,
     so a generator run on its own against an existing assembly still finds its
-    parameters. Each link is resolved independently of the other.
+    parameters. Each link is resolved independently of the others.
     """
     doc = obj.Document
     if hasattr(obj, "Original_PCB"):
         obj.Original_PCB = pcb_object or find_by_name(doc, "Parametric_PCB")
     if hasattr(obj, "Support_Rods"):
         obj.Support_Rods = rods_object or find_by_name(doc, "Support_Rods")
+    if hasattr(obj, "Carrier_Plate"):
+        obj.Carrier_Plate = carrier_object or find_by_name(doc, "Carrier_Plate")
+
 
 
 def active_document():

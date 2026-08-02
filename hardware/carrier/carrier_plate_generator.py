@@ -11,6 +11,8 @@ Run standalone:  freecadcmd hardware/carrier/carrier_plate_generator.py
 import os
 import sys
 
+import math
+
 import FreeCAD as App
 import Part
 
@@ -122,6 +124,32 @@ class ParametricCarrierPlate:
                     rod_diameter, hole_radius * 2, thickness,
                     App.Vector(center.x, center.y - hole_radius, 0)))
 
+            # 4b. Trim the front-right lead-in tab back.
+            # Its outer edge used to run straight out from the bottom of the
+            # rod hole to the plate's right edge, which made the tab longer
+            # than it needs to be and buried the pivot bead in it. Replace that
+            # ledge with a single arc leaving the hole tangentially at the
+            # hole's lowest point, so the tab tapers to a tip short of the
+            # plate edge and hands the material back to the bead.
+            lead_radius = hardware_utils.CARRIER_LEAD_IN_RADIUS * rod_radius
+            tab_top_y = fr_center.y - hole_radius   # the hole's lowest point
+            arc_center_y = tab_top_y - lead_radius
+            drop = arc_center_y - y_min
+
+            if lead_radius > drop:
+                keeper = hardware_utils.through_cutter(
+                    lead_radius, thickness, App.Vector(fr_center.x, arc_center_y, 0))
+                region = hardware_utils.through_box(
+                    (x_max + padding) - fr_center.x, tab_top_y - (y_min - padding),
+                    thickness, App.Vector(fr_center.x, y_min - padding, 0))
+                plate = plate.cut(region.cut(keeper))
+                tab_tip_x = fr_center.x + math.sqrt(lead_radius ** 2 - drop ** 2)
+            else:
+                App.Console.PrintWarning(
+                    "CarrierPlate: lead-in radius too small to close the tab; "
+                    "leaving it square.\n")
+                tab_tip_x = None
+
             # 5. Cut the top-left section back to a hook.
             # The cut runs along the line joining the two left rod centres,
             # then turns 90 degrees at the front-left rod and exits left.
@@ -173,11 +201,18 @@ class ParametricCarrierPlate:
             # 7. Round the three corners the right-hand slots left behind.
             # (The fourth, at the rear, coincides with the plate's rear edge.)
             slot_fillet = hardware_utils.CARRIER_SLOT_FILLET * rod_radius
-            plate = hardware_utils.fillet_corners(plate, [
+            slot_corners = [
                 (x_max, c_top_y - hole_radius, slot_fillet),
                 (x_max, c_bottom_y + hole_radius, slot_fillet),
-                (x_max, c_bottom_y - hole_radius, slot_fillet),
-            ], context="CarrierPlate slot corner")
+            ]
+            # The third slot corner used to sit where the ledge met the plate
+            # edge. The lead-in arc replaced it, so round its new tip instead.
+            if tab_tip_x is not None:
+                slot_corners.append(
+                    (tab_tip_x, y_min,
+                     hardware_utils.CARRIER_LEAD_IN_TIP_FILLET * rod_radius))
+            plate = hardware_utils.fillet_corners(
+                plate, slot_corners, context="CarrierPlate slot corner")
 
         # 8. Bore the board mounting holes through both plate and spacer
         if pcb_hole_diameter > 0:
