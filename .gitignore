@@ -31,6 +31,12 @@ __pycache__/
 .venv/
 venv/
 
+# FreeCAD — models the hardware/ generators build are reproducible from source
+*.FCStd
+*.FCStd1
+*.FCBak
+hardware/animation.gif
+
 # Build / slicer artifacts
 *.gcode
 *.3mf
