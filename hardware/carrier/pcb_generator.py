@@ -34,9 +34,11 @@ class ParametricPCB:
         obj.addProperty("App::PropertyLength", "CornerRadius", "Dimensions", "Radius of the corners").CornerRadius = 3.0
 
         # Mounting holes
-        obj.addProperty("App::PropertyLength", "HoleDiameter", "Mounting", "Diameter of mounting holes").HoleDiameter = 2.75
+        # Raspberry Pi 3B/4B/5 share this footprint: M2.5 holes on 58 x 49mm,
+        # 3.5mm in from each edge of an 85 x 56mm board.
+        obj.addProperty("App::PropertyLength", "HoleDiameter", "Mounting", "Diameter of mounting holes").HoleDiameter = 2.7
         obj.addProperty("App::PropertyLength", "LeftOffset", "Mounting", "Left hole offset").LeftOffset = 3.5
-        obj.addProperty("App::PropertyLength", "RightOffset", "Mounting", "Right hole offset").RightOffset = 30.5
+        obj.addProperty("App::PropertyLength", "RightOffset", "Mounting", "Right hole offset").RightOffset = 23.5
         obj.addProperty("App::PropertyLength", "TopOffset", "Mounting", "Top hole offset").TopOffset = 3.5
         obj.addProperty("App::PropertyLength", "BottomOffset", "Mounting", "Bottom hole offset").BottomOffset = 3.5
 
