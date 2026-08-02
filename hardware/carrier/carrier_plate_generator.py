@@ -38,10 +38,12 @@ class ParametricCarrierPlate:
         # --- Carrier Plate Specific Properties ---
         obj.addProperty("App::PropertyLength", "Thickness", "Dimensions", "Board thickness").Thickness = 3.0
         obj.addProperty("App::PropertyLength", "SpacerExtraDiameter", "Dimensions", "Extra diameter for PCB spacers").SpacerExtraDiameter = 3.0
-        # Unlike the rack plates, this one has to rotate and slide on the rods
-        # rather than grip them, so its holes and slots need a running fit.
+        # Nominal by default: the carrier is cut tight to the rods, matching
+        # the sheet route where the kerf opens the holes up on its own. This
+        # plate does have to rotate and slide on the rods, so raise it here if
+        # the swing binds -- it widens the rod holes and the fork slots alike.
         obj.addProperty("App::PropertyLength", "RodClearance", "Dimensions",
-                        "Diametral clearance added to each rod hole and slot").RodClearance = 0.3
+                        "Diametral clearance added to each rod hole and slot").RodClearance = 0.0
 
     def execute(self, obj):
         params = obj.Original_PCB
@@ -94,15 +96,18 @@ class ParametricCarrierPlate:
             (x_max, y_min, hardware_utils.CARRIER_FRONT_RIGHT_FILLET * rod_radius),
         ], context="CarrierPlate outer corner")
 
-        # 3. Stand a spacer around each board mounting hole. The plate runs
-        # z 0..thickness, so a cylinder of 2*thickness leaves exactly one
-        # plate thickness of spacer proud of the top face.
-        spacer_height = thickness * 2.0
+        # 3. Stand a spacer boss around each board mounting hole, one plate
+        # thickness proud of the top face.
+        # The boss starts at the top face rather than at the underside: a
+        # cylinder spanning the whole plate fuses its base circle into the
+        # bottom face, splitting it into a main face plus four annuli that
+        # read as phantom rings on a part that is flat underneath.
+        stack_height = thickness * 2.0  # plate + boss; what the bore passes through
         if spacer_extra > 0 and pcb_hole_diameter > 0:
             spacer_outer_radius = (pcb_hole_diameter + spacer_extra) / 2.0
             for center in pcb_centers:
-                spacer = Part.makeCylinder(spacer_outer_radius, spacer_height)
-                spacer.translate(center)
+                spacer = Part.makeCylinder(spacer_outer_radius, thickness)
+                spacer.translate(App.Vector(center.x, center.y, thickness))
                 plate = plate.fuse(spacer)
 
         # 4. Cut the rod holes
@@ -156,12 +161,13 @@ class ParametricCarrierPlate:
             rl_intersect = rl_center - u_slant * hole_radius
 
             hook_fillet = hardware_utils.CARRIER_HOOK_FILLET * rod_radius
-            slant_fillet = hardware_utils.CARRIER_SLANT_FILLET * rod_radius
             plate = hardware_utils.fillet_corners(plate, [
                 (outer_corner.x, outer_corner.y, hook_fillet),
                 (inner_corner.x, inner_corner.y, hook_fillet),
-                (fl_intersect.x, fl_intersect.y, slant_fillet),
-                (rl_intersect.x, rl_intersect.y, slant_fillet),
+                (fl_intersect.x, fl_intersect.y,
+                 hardware_utils.CARRIER_HOOK_TIP_FILLET * rod_radius),
+                (rl_intersect.x, rl_intersect.y,
+                 hardware_utils.CARRIER_SLANT_FILLET * rod_radius),
             ], context="CarrierPlate hook corner")
 
             # 7. Round the three corners the right-hand slots left behind.
@@ -178,7 +184,7 @@ class ParametricCarrierPlate:
             pcb_hole_radius = pcb_hole_diameter / 2.0
             for center in pcb_centers:
                 plate = plate.cut(
-                    hardware_utils.through_cutter(pcb_hole_radius, spacer_height, center))
+                    hardware_utils.through_cutter(pcb_hole_radius, stack_height, center))
 
         obj.Shape = plate
 

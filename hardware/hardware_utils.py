@@ -27,6 +27,10 @@ PLATE_EDGE_PADDING = 1.0
 RACK_PLATE_FILLET = 1.5
 CARRIER_FRONT_LEFT_FILLET = 2.0
 CARRIER_FRONT_RIGHT_FILLET = 0.5
+# Where the hook's slanted edge runs into each left-hand rod hole. The front
+# one is the tip of the hook and takes the load as the carrier swings, so it
+# is rounded harder than its rear-left counterpart.
+CARRIER_HOOK_TIP_FILLET = 1.5
 CARRIER_SLANT_FILLET = 0.5
 # Deliberately not equal to the fillets above: where two tangent fillets of the
 # same radius meet, OpenCASCADE produces a degenerate face and the operation
