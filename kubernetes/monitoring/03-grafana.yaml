@@ -110,9 +110,12 @@ spec:
               mountPath: /var/lib/grafana
           resources:
             requests: { cpu: "50m", memory: "192Mi" }
-            # 512Mi: Grafana exceeds 320Mi on arm64 once dashboards are loaded
-            # and is OOMKilled at that limit. The 4GB workers have the headroom.
-            limits:   { cpu: "500m", memory: "512Mi" }
+            # 1Gi: 512Mi was not enough. Grafana settled at ~495Mi RSS (only
+            # ~6Mi of that page cache) against the 512Mi ceiling — 99% — where
+            # allocation stalls made /api/health miss the readiness timeout and
+            # the Service dropped the endpoint. It never OOMKilled; it just sat
+            # at the cliff edge and flapped. The 4GB workers have the headroom.
+            limits:   { cpu: "500m", memory: "1Gi" }
           readinessProbe:
             httpGet: { path: /api/health, port: 3000 }
             # Grafana initializes its SQLite database on first start, which is
