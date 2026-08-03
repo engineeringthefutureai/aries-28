@@ -138,7 +138,7 @@ The panel and lighting choices below are one implementation's aesthetic; they ar
 - **At least the front (or left) panel must be removable or hinged** (magnets or printed hinge), so a board can be reached without disassembling the enclosure.
 - Black 3mm → back and bottom; smoked 3mm → front, left, and right show faces (cut to size).
 
-**Front panel engraving (brand mark).** Large Aries ram glyph (♈, the validated SVG from the carrier work) engraved on the **back face** of the smoked front panel, centered, with cyan circuit-traces radiating outward; LED strip along the panel edge edge-lights the engraving so it glows while the rest stays dark. Motif repeats at three scales: big glyph on the front (logo) · astrometric Aries constellation as a secondary detail (signature) · tiny ram per carrier (texture). 7" display integrated into the trace artwork.
+**Front panel engraving (brand mark).** Large Aries ram glyph (♈, the validated SVG from the carrier work — third-party artwork under CC Attribution, see `hardware/carrier/README.md`) engraved on the **back face** of the smoked front panel, centered, with cyan circuit-traces radiating outward; LED strip along the panel edge edge-lights the engraving so it glows while the rest stays dark. Motif repeats at three scales: big glyph on the front (logo) · astrometric Aries constellation as a secondary detail (signature) · tiny ram per carrier (texture). 7" display integrated into the trace artwork.
 
 - **Connection panel (rear, laser-cut):** IEC C14 inlet w/ switch+fuse (only power entry), the recessed **DPST soft-power toggle** (§4.4), RJ45 keystone **WAN**, RJ45 keystone **MAINT** (direct switch port, bypasses gateway), optional USB-C keystone (gateway serial console — see `network-design.md` §8.2).
 
