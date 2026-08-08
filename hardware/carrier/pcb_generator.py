@@ -1,8 +1,15 @@
-"""The payload board and its port block.
+"""A featureless payload board and its port block.
 
-Parametric_PCB is the parameter source for the whole model: the rods and both
-plates read their dimensions off it, so changing one property here propagates
-through the entire assembly.
+The generic stand-in for any 85x56 SBC. `generate_rack.py` no longer builds it
+-- it builds a real Raspberry Pi 5 from `rpi5_generator.py`, which exposes the
+same properties under the same names and is named `Parametric_PCB` in its turn.
+Kept for the day a bay has to carry something that is not a Pi: swap the call
+in step 1 of `generate_rack.py` back to `create_parametric_pcb()` and the rest
+of the assembly is none the wiser.
+
+Whichever of the two is built, Parametric_PCB is the parameter source for the
+whole model: the rods and both plates read their dimensions off it, so changing
+one property here propagates through the entire assembly.
 
 Run standalone:  freecadcmd hardware/carrier/pcb_generator.py
 """

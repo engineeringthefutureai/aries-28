@@ -19,14 +19,14 @@ if _HARDWARE_ROOT not in sys.path:
     sys.path.insert(0, _HARDWARE_ROOT)
 
 import hardware_utils
-from carrier import carrier_plate_generator, pcb_generator
+from carrier import carrier_plate_generator, rpi5_generator
 from rack import bead_generator, rack_plate_generator, rods_generator
 
 # Force FreeCAD to reload the latest scripts from disk -- without this, a GUI
 # session that has already imported them keeps running the old code.
 # hardware_utils comes first: every generator holds a reference to it, and
 # reloading it in place is what makes edits to the shared rod math take effect.
-for _module in (hardware_utils, pcb_generator, rods_generator, bead_generator,
+for _module in (hardware_utils, rpi5_generator, rods_generator, bead_generator,
                 rack_plate_generator, carrier_plate_generator):
     importlib.reload(_module)
 
@@ -61,9 +61,19 @@ def build_rack_assembly():
         doc = App.newDocument(hardware_utils.DOC_NAME)
     App.setActiveDocument(doc.Name)
 
-    # 1. Create Base Original Geometry (PCB and Ports)
-    pcb_original, _ports_original = pcb_generator.create_parametric_pcb()
+    # 1. The board. A real Raspberry Pi 5, built from its mechanical drawing,
+    # standing in the Blade_Original container the bays clone from. It doubles
+    # as the parameter source the rods, plates, carrier and beads size
+    # themselves against -- see carrier/rpi5_generator.py. Swap in
+    # `pcb_generator.create_parametric_pcb()` here for the plain 85x56 slab if
+    # a bay ever has to carry something that is not a Pi.
+    pcb_original, _parts = rpi5_generator.create_rpi5(group_name="Blade_Original")
     blade_original = doc.getObject("Blade_Original")
+
+    # Hidden like the carrier master below: it is a source for the clones, not
+    # something to look at. An App::Link draws its target regardless.
+    if App.GuiUp:
+        blade_original.ViewObject.Visibility = False
 
     # 2. Create Support Rods (Before plates, since plates depend on rod parameters!)
     rods = rods_generator.create_rods(pcb_original)
@@ -103,7 +113,7 @@ def build_rack_assembly():
     carrier_z = f"{bottom_plate.Name}.Thickness + {beads.Name}.WebHeight"
     carrier_clone.setExpression("Placement.Base.z", carrier_z)
 
-    # 7. Create a SINGLE Clone for the entire Blade_Original (PCB + Ports).
+    # 7. Create a SINGLE Clone for the entire Blade_Original (the whole board).
     # The original is parked off to the side as the editable master; the clone
     # is the instance that sits in the rack.
     blade_original.setExpression(

@@ -1,8 +1,16 @@
 """A Raspberry Pi 5 built from its mechanical drawing.
 
-Where `pcb_generator.py` gives the rack a featureless 85x56 slab to size itself
-against, this builds the actual board: every outline the drawing draws, at the
-coordinates it draws them, extruded to the heights its side view dimensions.
+This is the board the rack builds and sizes itself against, in place of the
+featureless 85x56 slab in `pcb_generator.py`: every outline the drawing draws,
+at the coordinates it draws them, extruded to the heights its side view
+dimensions. Modelling the real thing is what makes bay clearances answerable --
+a slab has no microSD socket under it, nothing overhanging its edges, and no
+15.8mm USB stack reaching into the bay above.
+
+It doubles as the parameter source for the rest of the model, which is why its
+properties carry the shared names (`Width`, `Length`, `Thickness`,
+`HoleDiameter`, and the four hole offsets) and its object is called
+`Parametric_PCB`.
 
 Geometry was recovered from the vector content of Raspberry Pi Ltd drawing
 RP-008347-DS-1 (`.claude/RP-008347-DS-1-raspberry-pi-5-mechanical-drawing.pdf`)
@@ -174,10 +182,16 @@ class ParametricRPi5Board:
         obj.addProperty("App::PropertyLength", "CornerRadius", "Dimensions", "Board corner radius").CornerRadius = 3.0
 
         # The 58 x 49 pattern the drawing dimensions, 3.5mm in from two edges.
+        # Named and measured the way `hardware_utils.mounting_hole_centers()`
+        # wants them -- each offset from its nearest edge, so RightOffset is
+        # 85 - 61.5 -- because the carrier stands its spacer bosses on the same
+        # function's output. Sharing it is what guarantees the bosses land under
+        # the holes instead of merely being set to matching numbers.
         obj.addProperty("App::PropertyLength", "HoleDiameter", "Mounting", "Mounting hole diameter").HoleDiameter = 2.7
-        obj.addProperty("App::PropertyLength", "HoleInset", "Mounting", "Mounting hole inset from the left and bottom edges").HoleInset = 3.5
-        obj.addProperty("App::PropertyLength", "HoleSpacingX", "Mounting", "Mounting hole spacing along x").HoleSpacingX = 58.0
-        obj.addProperty("App::PropertyLength", "HoleSpacingY", "Mounting", "Mounting hole spacing along y").HoleSpacingY = 49.0
+        obj.addProperty("App::PropertyLength", "LeftOffset", "Mounting", "Mounting hole offset from the left edge").LeftOffset = 3.5
+        obj.addProperty("App::PropertyLength", "RightOffset", "Mounting", "Mounting hole offset from the right edge").RightOffset = 23.5
+        obj.addProperty("App::PropertyLength", "TopOffset", "Mounting", "Mounting hole offset from the top edge").TopOffset = 3.5
+        obj.addProperty("App::PropertyLength", "BottomOffset", "Mounting", "Mounting hole offset from the bottom edge").BottomOffset = 3.5
 
         # The drawing's two other holes, each 6mm from a mounting hole along y
         # and sharing its x -- one by the lower-left hole, one by the upper-right.
@@ -206,20 +220,21 @@ class ParametricRPi5Board:
 
 
 def _hole_centers(params):
-    """(centre, diameter) for all six holes the drawing puts through the board."""
-    inset = float(params.HoleInset)
-    left, bottom = inset, inset
-    right = left + float(params.HoleSpacingX)
-    top = bottom + float(params.HoleSpacingY)
+    """(centre, diameter) for all six holes the drawing puts through the board.
 
+    The four mounting holes come from the shared helper, so they are the same
+    four points the carrier puts its bosses on. The other two are the drawing's
+    own, offset along y from the lower-left and upper-right of that set.
+    """
     diameter = float(params.HoleDiameter)
-    holes = [(App.Vector(x, y, 0), diameter)
-             for x in (left, right) for y in (bottom, top)]
+    corners = hardware_utils.mounting_hole_centers(params)
+    holes = [(centre, diameter) for centre in corners]
 
+    lower_left, _lower_right, upper_right, _upper_left = corners
     offset = float(params.AuxHoleOffset)
     aux = float(params.AuxHoleDiameter)
-    holes.append((App.Vector(left, bottom + offset, 0), aux))
-    holes.append((App.Vector(right, top - offset, 0), aux))
+    holes.append((lower_left + App.Vector(0, offset, 0), aux))
+    holes.append((upper_right - App.Vector(0, offset, 0), aux))
     return holes
 
 
@@ -360,25 +375,34 @@ def apply_colours(doc=None):
     doc = doc or App.ActiveDocument
     if doc is None:
         return
-    board = doc.getObject("RPi5_Board")
+    board = hardware_utils.find_by_name(doc, "Parametric_PCB")
     if board:
         _paint(board, LAMINATE_COLOUR)
-    for material, (name, colour) in MATERIALS.items():
+    for _material, (name, colour) in MATERIALS.items():
         obj = doc.getObject(f"RPi5_{name}")
         if obj:
             _paint(obj, colour)
 
 
-def create_rpi5():
-    """Build the board and one part group per material into the active document."""
+def create_rpi5(group_name="Raspberry_Pi_5"):
+    """Build the board and one part group per material into the active document.
+
+    The board object is named `Parametric_PCB` because that is the name the
+    rest of the model looks a board up by -- see `hardware_utils.find_by_name`
+    -- so this drops straight into `generate_rack.py` in place of the
+    placeholder slab. Its label says what it actually is. `group_name` is the
+    container to build into, which the rack sets to `Blade_Original` so its
+    existing clone-into-each-bay machinery picks the whole board up unchanged.
+    """
     doc = hardware_utils.active_document()
 
-    group = doc.getObject("Raspberry_Pi_5")
+    group = doc.getObject(group_name)
     if not group:
-        group = doc.addObject("App::Part", "Raspberry_Pi_5")
-        group.Label = "Raspberry_Pi_5"
+        group = doc.addObject("App::Part", group_name)
+        group.Label = group_name
 
-    board = doc.addObject("Part::FeaturePython", "RPi5_Board")
+    board = doc.addObject("Part::FeaturePython", "Parametric_PCB")
+    board.Label = "RPi5_Board"
     ParametricRPi5Board(board)
     group.addObject(board)
     _paint(board, LAMINATE_COLOUR)
