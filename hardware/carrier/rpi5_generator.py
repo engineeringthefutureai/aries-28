@@ -12,6 +12,13 @@ plan view and y 0..56 up it, which places the GPIO header along y=56 and the
 Ethernet and USB stacks against x=85. The PCB occupies z 0..Thickness and every
 component height is measured from its top face, matching the side view.
 
+Parts are grouped into one object per material -- green laminate, nickel port
+shells, gold pins, black plastic and packages, and so on -- so the board is
+recognisable in the 3D view. That is presentation, not drawing data: the
+drawing is line art in two colours and says nothing about materials. Colour is
+a view property, so a document built headless by `freecadcmd` has none until
+it is opened in the GUI; `apply_colours()` puts them on.
+
 The drawing's own caveat applies to this model too: dimensions are approximate
 and for reference, and not all board components are shown.
 
@@ -41,35 +48,54 @@ import hardware_utils
 # blocks are the drawing's footprints at an invented thickness, not measurements.
 UNDIMENSIONED_HEIGHT = 1.2
 
-# The three tables below are all (label, x0, y0, x1, y1, ...) in board
-# coordinates, with heights measured from the PCB's top face. Each category is
+# What each part is made of. Nothing in the drawing says -- it is line art in
+# two colours -- so these are read off a real board, and they exist to make the
+# model recognisable in the 3D view rather than to assert anything. Parts are
+# grouped into one object per material, because a FreeCAD solid carries a
+# single colour and grouping is the robust way to get several: per-face
+# DiffuseColor would have to be reapplied every time a boolean renumbers faces.
+#
+#   key:        (object name,       colour)
+MATERIALS = {
+    "Shell":    ("Port_Shells",     (0.80, 0.82, 0.85)),  # nickel-plated steel
+    "Contact":  ("Header_Pins",     (0.83, 0.69, 0.31)),  # gold-plated pins
+    "Plastic":  ("Black_Plastic",   (0.08, 0.08, 0.09)),  # connector bodies
+    "Package":  ("Packages",        (0.13, 0.13, 0.14)),  # black epoxy
+    "Passive":  ("Passives",        (0.62, 0.60, 0.56)),  # ceramic and tantalum
+    "Button":   ("Power_Button",    (0.72, 0.11, 0.13)),  # the Pi 5's red cap
+}
+LAMINATE_COLOUR = (0.09, 0.40, 0.18)  # solder mask
+
+# The three tables below are all (label, x0, y0, x1, y1, ..., material) in board
+# coordinates, with heights measured from the PCB's top face. Each material is
 # fused into one solid, so the labels are here to name what a row came from
 # rather than to become object names.
 
-# Metal-shelled connectors. Every one of these is dimensioned: the plan view
-# fixes the footprint and the side view fixes the height.
+# The connectors. Every one of these is dimensioned: the plan view fixes the
+# footprint and the side view fixes the height.
 CONNECTORS = [
     # Along the y=0 edge, overhanging it. The drawing's 11.2 / 25.8 / 39.2
     # callouts are the x centres of these three, and they come out at 11.195,
     # 25.795 and 39.200.
-    ("USB_C",         6.82, -1.32, 15.57,  5.99,  3.2),
-    ("Micro_HDMI_0", 22.20, -1.67, 29.39,  6.87,  3.4),
-    ("Micro_HDMI_1", 35.60, -1.67, 42.80,  6.87,  3.4),
+    ("USB_C",         6.82, -1.32, 15.57,  5.99,  3.2, "Shell"),
+    ("Micro_HDMI_0", 22.20, -1.67, 29.39,  6.87,  3.4, "Shell"),
+    ("Micro_HDMI_1", 35.60, -1.67, 42.80,  6.87,  3.4, "Shell"),
     # The two 22-way MIPI camera/display flexes, standing off the same edge.
-    ("MIPI_FPC_0",   47.25,  0.69, 50.21, 16.18,  4.1),
-    ("MIPI_FPC_1",   53.45,  0.69, 56.38, 16.18,  4.1),
+    ("MIPI_FPC_0",   47.25,  0.69, 50.21, 16.18,  4.1, "Plastic"),
+    ("MIPI_FPC_1",   53.45,  0.69, 56.38, 16.18,  4.1, "Plastic"),
     # The PCIe flex, on the opposite edge.
-    ("PCIe_FFC",      1.24, 24.75,  4.21, 35.27,  4.1),
+    ("PCIe_FFC",      1.24, 24.75,  4.21, 35.27,  4.1, "Plastic"),
     # The port block, overhanging x=85 by the side view's 3mm -- drawn as 2.99
     # for the RJ45 and 2.89 for the two USB shells, which the callout rounds.
     # Their y centres are the 10.2 / 29.1 / 47 callouts: 10.200, 29.060, 46.995.
-    ("Ethernet",     66.75,  2.21, 87.99, 18.19, 13.9),
-    ("USB_A_Stack_0", 70.95, 21.76, 87.89, 36.36, 15.8),
-    ("USB_A_Stack_1", 70.95, 39.71, 87.89, 54.28, 15.8),
+    ("Ethernet",     66.75,  2.21, 87.99, 18.19, 13.9, "Shell"),
+    ("USB_A_Stack_0", 70.95, 21.76, 87.89, 36.36, 15.8, "Shell"),
+    ("USB_A_Stack_1", 70.95, 39.71, 87.89, 54.28, 15.8, "Shell"),
 ]
 
-# Through-hole headers, modelled as a plastic body carrying square pins. Both
-# bodies are the 2.5mm the side view shows between pins.
+# Through-hole headers, modelled as a plastic body carrying square pins -- so
+# each one splits between the Plastic and Contact materials. Both bodies are
+# the 2.5mm the side view shows between pins.
 HEADER_BODY_HEIGHT = 2.5
 HEADER_PIN_SIZE = 0.64
 HEADER_PITCH = 2.54
@@ -84,38 +110,38 @@ HEADERS = [
 # given; None takes UNDIMENSIONED_HEIGHT.
 COMPONENTS = [
     # Dimensioned by the side view.
-    ("Component_4V4_0",   16.98,  3.30, 21.00,  6.20, 4.4),
-    ("Component_4V4_1",   29.68,  2.28, 35.00,  5.49, 4.4),
+    ("Component_4V4_0",   16.98,  3.30, 21.00,  6.20, 4.4, "Package"),
+    ("Component_4V4_1",   29.68,  2.28, 35.00,  5.49, 4.4, "Package"),
     # The side view's 4.4 run starts at x=65.2, where these two both begin, so
     # it dimensions at least one of them and cannot say which.
-    ("Component_Right_0", 65.34, 40.35, 69.65, 47.65, 4.4),
-    ("Component_Right_1", 65.24, 48.99, 68.24, 54.99, 4.4),
+    ("Component_Right_0", 65.34, 40.35, 69.65, 47.65, 4.4, "Package"),
+    ("Component_Right_1", 65.24, 48.99, 68.24, 54.99, 4.4, "Package"),
     # The power button: a body inboard of the edge with its actuator poking
     # 0.45mm past it, which is what the side view's 0.45 measures.
-    ("Power_Button_Body", 0.40, 16.15,  2.94, 20.66, 3.3),
-    ("Power_Button_Cap", -0.45, 17.38,  0.40, 19.39, 2.7),
+    ("Power_Button_Body", 0.40, 16.15,  2.94, 20.66, 3.3, "Plastic"),
+    ("Power_Button_Cap", -0.45, 17.38,  0.40, 19.39, 2.7, "Button"),
 
     # Footprints only -- see UNDIMENSIONED_HEIGHT. The large central packages
     # are the board's silicon; the drawing labels none of it.
-    ("Package_Centre",     24.60, 14.31, 41.60, 31.28, None),
-    ("Package_North",      25.90, 34.03, 40.40, 44.05, None),
-    ("Package_East",       52.40, 28.99, 64.39, 40.98, None),
-    ("Package_Northwest",   7.21, 35.80, 17.68, 48.88, None),
-    ("Package_West",        8.19, 12.19, 14.19, 18.19, None),
-    ("Connector_West",      0.15, 11.70,  1.63, 14.91, None),
-    ("Component_Small_0",  41.88,  9.87, 43.89, 12.87, None),
-    ("Component_Small_1",  55.25, 46.48, 56.88, 49.41, None),
-    ("Passive_0",           5.58, 20.56,  7.59, 23.34, None),
-    ("Passive_1",           8.09, 20.56, 10.10, 23.34, None),
-    ("Passive_2",          12.29, 20.56, 14.30, 23.34, None),
-    ("Passive_3",          14.79, 20.56, 16.80, 23.34, None),
-    ("Passive_4",           4.35, 13.29,  6.36, 14.49, None),
-    ("Passive_5",           4.35, 16.71,  6.36, 17.91, None),
-    ("Passive_6",          16.06, 13.29, 18.04, 14.49, None),
-    ("Passive_7",          16.06, 16.71, 18.04, 17.91, None),
-    ("Passive_8",           7.73,  8.35,  8.93, 10.36, None),
-    ("Passive_9",          11.16,  8.35, 12.36, 10.36, None),
-    ("Passive_10",         13.73,  8.35, 14.93, 10.36, None),
+    ("Package_Centre",     24.60, 14.31, 41.60, 31.28, None, "Package"),
+    ("Package_North",      25.90, 34.03, 40.40, 44.05, None, "Package"),
+    ("Package_East",       52.40, 28.99, 64.39, 40.98, None, "Package"),
+    ("Package_Northwest",   7.21, 35.80, 17.68, 48.88, None, "Package"),
+    ("Package_West",        8.19, 12.19, 14.19, 18.19, None, "Package"),
+    ("Connector_West",      0.15, 11.70,  1.63, 14.91, None, "Plastic"),
+    ("Component_Small_0",  41.88,  9.87, 43.89, 12.87, None, "Package"),
+    ("Component_Small_1",  55.25, 46.48, 56.88, 49.41, None, "Package"),
+    ("Passive_0",           5.58, 20.56,  7.59, 23.34, None, "Passive"),
+    ("Passive_1",           8.09, 20.56, 10.10, 23.34, None, "Passive"),
+    ("Passive_2",          12.29, 20.56, 14.30, 23.34, None, "Passive"),
+    ("Passive_3",          14.79, 20.56, 16.80, 23.34, None, "Passive"),
+    ("Passive_4",           4.35, 13.29,  6.36, 14.49, None, "Passive"),
+    ("Passive_5",           4.35, 16.71,  6.36, 17.91, None, "Passive"),
+    ("Passive_6",          16.06, 13.29, 18.04, 14.49, None, "Passive"),
+    ("Passive_7",          16.06, 16.71, 18.04, 17.91, None, "Passive"),
+    ("Passive_8",           7.73,  8.35,  8.93, 10.36, None, "Passive"),
+    ("Passive_9",          11.16,  8.35, 12.36, 10.36, None, "Passive"),
+    ("Passive_10",         13.73,  8.35, 14.93, 10.36, None, "Passive"),
 ]
 
 # The plan view draws one component square-on to nothing: a 6mm square turned
@@ -198,21 +224,23 @@ def _hole_centers(params):
 
 
 class ParametricRPi5Parts:
-    """One category of the board's components, stood on a linked board.
+    """Everything on the board made of one material, stood on a linked board.
 
-    Kept apart from the PCB so each category can carry its own colour, and so
-    a rack that only needs the board's envelope can switch the rest off.
+    Split by material rather than by kind so each object can carry its own
+    colour -- a header ends up across two of these, its body with the other
+    black plastic and its pins with the gold. Kept apart from the PCB so a rack
+    that only needs the board's envelope can switch the rest off.
     """
 
-    CATEGORIES = ("Connectors", "Headers", "Components")
+    MATERIAL_KEYS = tuple(MATERIALS)
 
-    def __init__(self, obj, category):
+    def __init__(self, obj, material):
         obj.Proxy = self
         obj.addProperty("App::PropertyLinkGlobal", "Board", "Parameters", "The board these stand on")
-        obj.addProperty("App::PropertyEnumeration", "Category", "Parameters",
-                        "Which group of the drawing's outlines to build")
-        obj.Category = list(self.CATEGORIES)
-        obj.Category = category
+        obj.addProperty("App::PropertyEnumeration", "Material", "Parameters",
+                        "Which material's share of the drawing's outlines to build")
+        obj.Material = list(self.MATERIAL_KEYS)
+        obj.Material = material
         obj.addProperty("App::PropertyLength", "UndimensionedHeight", "Dimensions",
                         "Height given to footprints the drawing never elevates"
                         ).UndimensionedHeight = UNDIMENSIONED_HEIGHT
@@ -227,13 +255,9 @@ class ParametricRPi5Parts:
             App.Console.PrintError("RPi5 parts: linked object is not an RPi5 board.\n")
             return
 
-        if obj.Category == "Connectors":
-            shapes = [_block(*entry[1:], base=top) for entry in CONNECTORS]
-        elif obj.Category == "Headers":
-            shapes = _header_shapes(top)
-        else:
-            shapes = _component_shapes(top, float(obj.UndimensionedHeight))
-            shapes += _underside_shapes()
+        shapes = [shape for material, shape
+                  in _all_shapes(top, float(obj.UndimensionedHeight))
+                  if material == obj.Material]
 
         if not shapes:
             obj.Shape = Part.Shape()
@@ -252,32 +276,44 @@ def _block(x0, y0, x1, y1, height, base):
     return box
 
 
+def _all_shapes(top, undimensioned):
+    """(material, solid) for every part of the board except the laminate."""
+    shapes = [(material, _block(x0, y0, x1, y1, height, base=top))
+              for _label, x0, y0, x1, y1, height, material in CONNECTORS]
+    shapes += _header_shapes(top)
+    shapes += _component_shapes(top, undimensioned)
+    shapes += _underside_shapes()
+    return shapes
+
+
 def _header_shapes(top):
     """Header bodies and their pins."""
     shapes = []
-    for label, x0, y0, x1, y1, pin_height, first, columns, rows in HEADERS:
-        shapes.append(_block(x0, y0, x1, y1, HEADER_BODY_HEIGHT, base=top))
+    for _label, x0, y0, x1, y1, pin_height, first, columns, rows in HEADERS:
+        shapes.append(("Plastic", _block(x0, y0, x1, y1, HEADER_BODY_HEIGHT, base=top)))
         half = HEADER_PIN_SIZE / 2.0
         for column in range(columns):
             for row in range(rows):
                 cx = first[0] + column * HEADER_PITCH
                 cy = first[1] + row * HEADER_PITCH
-                shapes.append(_block(cx - half, cy - half, cx + half, cy + half,
-                                     pin_height, base=top))
+                shapes.append(("Contact",
+                               _block(cx - half, cy - half, cx + half, cy + half,
+                                      pin_height, base=top)))
     return shapes
 
 
 def _component_shapes(top, undimensioned):
     """The plan view's remaining outlines, including the turned square."""
-    shapes = [_block(x0, y0, x1, y1, height if height is not None else undimensioned, base=top)
-              for _label, x0, y0, x1, y1, height in COMPONENTS]
+    shapes = [(material,
+               _block(x0, y0, x1, y1, height if height is not None else undimensioned, base=top))
+              for _label, x0, y0, x1, y1, height, material in COMPONENTS]
 
     side = DIAMOND_DIAGONAL / 2.0 ** 0.5
     diamond = Part.makeBox(side, side, undimensioned)
     diamond.translate(App.Vector(-side / 2.0, -side / 2.0, top))
     diamond.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), 45.0)
     diamond.translate(App.Vector(DIAMOND_CENTRE[0], DIAMOND_CENTRE[1], 0))
-    shapes.append(diamond)
+    shapes.append(("Package", diamond))
     return shapes
 
 
@@ -301,11 +337,40 @@ def _underside_shapes():
                         MICROSD_Y[1] - MICROSD_Y[0],
                         MICROSD_CARD_Z[1] - MICROSD_CARD_Z[0])
     card.translate(App.Vector(MICROSD_CARD_X[0], MICROSD_Y[0], MICROSD_CARD_Z[0]))
-    return [socket, card]
+    # The socket shell is drawn metal; the card in it is not.
+    return [("Shell", socket), ("Plastic", card)]
+
+
+def _paint(obj, colour):
+    """Colour `obj`, if there is a GUI to colour it in.
+
+    Colour is a view property, and headless FreeCAD gives an object no view
+    provider at all, so a document built by `freecadcmd` saves without any.
+    Reopening it in the GUI is what creates them, with the defaults -- run
+    `apply_colours()` there to put these back on.
+    """
+    if not App.GuiUp:
+        return
+    obj.ViewObject.Proxy = 0
+    obj.ViewObject.ShapeColor = colour
+
+
+def apply_colours(doc=None):
+    """Repaint an existing board, e.g. one reopened from a headless build."""
+    doc = doc or App.ActiveDocument
+    if doc is None:
+        return
+    board = doc.getObject("RPi5_Board")
+    if board:
+        _paint(board, LAMINATE_COLOUR)
+    for material, (name, colour) in MATERIALS.items():
+        obj = doc.getObject(f"RPi5_{name}")
+        if obj:
+            _paint(obj, colour)
 
 
 def create_rpi5():
-    """Build the board and its three part groups into the active document."""
+    """Build the board and one part group per material into the active document."""
     doc = hardware_utils.active_document()
 
     group = doc.getObject("Raspberry_Pi_5")
@@ -316,27 +381,16 @@ def create_rpi5():
     board = doc.addObject("Part::FeaturePython", "RPi5_Board")
     ParametricRPi5Board(board)
     group.addObject(board)
+    _paint(board, LAMINATE_COLOUR)
 
-    colors = {
-        "Connectors": (0.75, 0.76, 0.78),   # nickel-plated shells
-        "Headers": (0.12, 0.12, 0.12),      # black plastic
-        "Components": (0.28, 0.28, 0.30),   # package grey
-    }
     parts = []
-    for category in ParametricRPi5Parts.CATEGORIES:
-        obj = doc.addObject("Part::FeaturePython", f"RPi5_{category}")
-        ParametricRPi5Parts(obj, category)
+    for material, (name, colour) in MATERIALS.items():
+        obj = doc.addObject("Part::FeaturePython", f"RPi5_{name}")
+        ParametricRPi5Parts(obj, material)
         obj.Board = board
         group.addObject(obj)
         parts.append(obj)
-
-        if App.GuiUp:
-            obj.ViewObject.Proxy = 0
-            obj.ViewObject.ShapeColor = colors[category]
-
-    if App.GuiUp:
-        board.ViewObject.Proxy = 0
-        board.ViewObject.ShapeColor = (0.05, 0.35, 0.15)  # solder mask
+        _paint(obj, colour)
 
     return board, parts
 

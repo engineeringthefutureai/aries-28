@@ -93,6 +93,12 @@ with every callout to within 0.01mm. Two things in it are *not* from the
 drawing and are marked in the source: the heights of packages the side view
 never elevates, and how wide the microSD socket is along y.
 
+The parts are grouped one object per material so the board comes out looking
+like a board — green laminate, nickel shells, gold pins, black packages. That
+grouping is only for the 3D view; the drawing says nothing about materials.
+Since colour is a view property, a `.FCStd` built by `freecadcmd` carries none
+until it is opened in the GUI — run `rpi5_generator.apply_colours()` there.
+
 Rod placement lives in `hardware_utils.calculate_rod_centers()` and nowhere
 else. Three rods sit tight against the board's footprint; the front-left one is
 pushed further out so the carrier's hook clears the rear-left rod as it swings.
