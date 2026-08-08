@@ -68,12 +68,30 @@ it, treat the `.FCStd` as a snapshot and re-run the script to change anything.
 | Generator | Builds |
 |---|---|
 | `carrier/pcb_generator.py` | The board and its port block. **This is the parameter source for everything else.** |
+| `carrier/rpi5_generator.py` | A real Raspberry Pi 5, built from its mechanical drawing. Stands apart from the rack — see below. |
 | `rack/rods_generator.py` | The four support rods, and the rod diameter/gap every other part reads. |
 | `rack/rack_plate_generator.py` | The top and bottom plates. |
 | `carrier/carrier_plate_generator.py` | The carrier: hook on the left, fork on the right, spacer bosses for the board. |
 | `rack/bead_generator.py` | The beads — the printed tubes that set the bay pitch. |
 | `hardware_utils.py` | Everything the parts must agree on: rod placement, hole positions, plate proportions, fillet sizes. |
 | `carrier/animate_carrier.FCMacro` | Swings one bay's carrier and board out, to check the mechanism. GUI only. |
+
+### The Pi 5 model is a reference, not a rack part
+
+`carrier/rpi5_generator.py` builds an actual Raspberry Pi 5 — outline, six
+holes, connectors, headers and package footprints — from Raspberry Pi Ltd
+drawing RP-008347-DS-1. Nothing in the rack reads it: the rack still sizes
+itself off `pcb_generator.py`'s plain 85x56 slab, and the two agree on the
+board outline and the 58x49 mounting pattern. Use it to check clearances —
+where the port block lands, how far the microSD card and power button stand
+proud of the edge, how much room a bay needs above the USB stacks — rather
+than as a parameter source.
+
+Its footprints are the drawing's own vector geometry rather than its printed
+callouts, so they carry more decimals than the callouts show, and they agree
+with every callout to within 0.01mm. Two things in it are *not* from the
+drawing and are marked in the source: the heights of packages the side view
+never elevates, and how wide the microSD socket is along y.
 
 Rod placement lives in `hardware_utils.calculate_rod_centers()` and nowhere
 else. Three rods sit tight against the board's footprint; the front-left one is
