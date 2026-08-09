@@ -67,13 +67,48 @@ it, treat the `.FCStd` as a snapshot and re-run the script to change anything.
 
 | Generator | Builds |
 |---|---|
-| `carrier/pcb_generator.py` | The board and its port block. **This is the parameter source for everything else.** |
+| `carrier/rpi5_generator.py` | A real Raspberry Pi 5, from its mechanical drawing. **This is the board the rack builds, and the parameter source for everything else.** |
+| `carrier/pcb_generator.py` | The old stand-in: a plain 85×56 slab and a block for its ports. Not built by default — see below. |
 | `rack/rods_generator.py` | The four support rods, and the rod diameter/gap every other part reads. |
 | `rack/rack_plate_generator.py` | The top and bottom plates. |
 | `carrier/carrier_plate_generator.py` | The carrier: hook on the left, fork on the right, spacer bosses for the board. |
 | `rack/bead_generator.py` | The beads — the printed tubes that set the bay pitch. |
 | `hardware_utils.py` | Everything the parts must agree on: rod placement, hole positions, plate proportions, fillet sizes. |
 | `carrier/animate_carrier.FCMacro` | Swings one bay's carrier and board out, to check the mechanism. GUI only. |
+
+### The board is a real Pi 5
+
+`carrier/rpi5_generator.py` builds an actual Raspberry Pi 5 — outline, six
+holes, connectors, headers and package footprints — from Raspberry Pi Ltd
+drawing RP-008347-DS-1, and that is what stands in each bay. It doubles as the
+parameter source: it exposes `Width`, `Length`, `Thickness`, `HoleDiameter` and
+the four hole offsets under the same names the rest of the model reads, and its
+object is named `Parametric_PCB` because that is the name they look a board up
+by. Its own holes come from `hardware_utils.mounting_hole_centers()`, the same
+call the carrier stands its bosses on, so the two cannot drift apart.
+
+`pcb_generator.py` is the plain slab it replaced. Nothing builds it now, but it
+still runs, and step 1 of `generate_rack.py` says how to put it back — worth
+keeping for the day a bay has to carry something that is not a Pi.
+
+Modelling the real board is what makes bay clearances answerable, because a Pi
+has parts a slab does not: a microSD socket under the laminate, connectors past
+three edges, and 15.8mm USB stacks reaching into the bay above. As built, a
+seated board clears every one of the rack's other parts — nearest approaches
+are 1.5mm from the microSD socket to its own carrier, 3.7mm from a connector to
+a rod, 3.8mm to the beads overhead and 6.8mm to the carrier overhead.
+
+Its footprints are the drawing's own vector geometry rather than its printed
+callouts, so they carry more decimals than the callouts show, and they agree
+with every callout to within 0.01mm. Two things in it are *not* from the
+drawing and are marked in the source: the heights of packages the side view
+never elevates, and how wide the microSD socket is along y.
+
+The parts are grouped one object per material so the board comes out looking
+like a board — green laminate, nickel shells, gold pins, black packages. That
+grouping is only for the 3D view; the drawing says nothing about materials.
+Since colour is a view property, a `.FCStd` built by `freecadcmd` carries none
+until it is opened in the GUI — run `rpi5_generator.apply_colours()` there.
 
 Rod placement lives in `hardware_utils.calculate_rod_centers()` and nowhere
 else. Three rods sit tight against the board's footprint; the front-left one is

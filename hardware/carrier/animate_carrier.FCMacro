@@ -4,6 +4,13 @@ Run from the FreeCAD GUI with the Rack_Assembly document open -- build it
 first with hardware/generate_rack.py. Set RECORD_GIF to also write an animated
 GIF next to the generators; that needs ffmpeg on PATH.
 
+The animation rests at each end of the motion rather than running the whole
+cycle at one speed, so there is time to read what happened before it moves
+again. The PAUSE_* settings say for how long.
+
+Frames are rendered SUPERSAMPLE times oversize and scaled back down by ffmpeg,
+which is what keeps the edges smooth -- see the note on that setting.
+
 The macro drives Placement by hand, which means temporarily removing the
 placement expressions that position the carrier and the blade. They are put
 back when the animation finishes, including if it fails part-way -- without
@@ -23,13 +30,28 @@ import FreeCADGui as Gui
 
 # --- Configuration ---
 RECORD_GIF = True
-FRAME_SIZE = (1280, 720)
+FRAME_SIZE = (720, 1000)   # portrait: the rack is far taller than it is wide
 FRAME_RATE = 20
+# saveImage renders the view with no anti-aliasing, so straight to FRAME_SIZE
+# every sloped edge comes out a staircase -- a 1280x720 frame of this model
+# holds only ~640 distinct colours, which is the giveaway. Render this many
+# times oversize instead and let ffmpeg lanczos it back down: the averaging on
+# the way down is the anti-aliasing. Costs render time and temp space roughly
+# with the square of it, so 3 is about the point of diminishing returns.
+SUPERSAMPLE = 3
 BAY = 2              # which bay to take out, counting from the bottom
 SWING_ANGLE = 45.0   # degrees the carrier rotates about the front-right rod
 SWING_FRAMES = 16
 PULL_FRAMES = 8      # steps spent sliding the carrier off the rods
 RETURN_SPEEDUP = 4   # the return legs play back this many times faster
+
+# How long the animation rests at each end of the motion, in seconds. Every
+# frame of a GIF written this way is on screen for the same 1/FRAME_RATE, so a
+# pause is not a duration but a number of repeated frames -- see hold().
+PAUSE_START = 0.5    # seated in the rack, before anything moves
+PAUSE_SWUNG = 0.5    # swung open, before the carrier comes off the rods
+PAUSE_OUT = 1.5      # fully withdrawn, the frame worth looking at
+PAUSE_HOME = 2.0     # home again, so the loop reads as a loop and not a stutter
 # ---------------------
 
 try:
@@ -90,12 +112,21 @@ def _encode_gif(frame_count):
 
     pattern = os.path.join(FRAME_DIR, "frame_%04d.png")
     palette = os.path.join(FRAME_DIR, "palette.png")
+    # Downscale from the oversized frames on the way in, both times: the
+    # palette has to be chosen from the same pixels that will be quantised
+    # against it, or it is a palette for a picture nobody sees.
+    scale = f"scale={FRAME_SIZE[0]}:{FRAME_SIZE[1]}:flags=lanczos"
     try:
         subprocess.run([ffmpeg, "-v", "warning", "-y", "-i", pattern,
-                        "-vf", "palettegen", palette], check=True)
+                        "-vf", f"{scale},palettegen=max_colors=256", palette], check=True)
         subprocess.run([ffmpeg, "-v", "warning", "-y",
                         "-framerate", str(FRAME_RATE), "-i", pattern,
-                        "-i", palette, "-lavfi", "paletteuse", GIF_OUTPUT], check=True)
+                        "-i", palette,
+                        # diff_mode keeps the held frames nearly free: only the
+                        # rectangle that actually changed gets re-encoded.
+                        "-lavfi", f"{scale}[s];[s][1:v]paletteuse="
+                                  "dither=sierra2_4a:diff_mode=rectangle",
+                        GIF_OUTPUT], check=True)
     except subprocess.CalledProcessError as exc:
         App.Console.PrintError(
             f"ffmpeg failed ({exc.returncode}); frames left in {FRAME_DIR}\n")
@@ -142,8 +173,32 @@ def run_animation():
             return
         view = Gui.ActiveDocument.ActiveView
         if view:
+            scale = max(1, SUPERSAMPLE)
             view.saveImage(os.path.join(FRAME_DIR, f"frame_{frames[0]:04d}.png"),
-                           FRAME_SIZE[0], FRAME_SIZE[1], "White")
+                           FRAME_SIZE[0] * scale, FRAME_SIZE[1] * scale, "White")
+            frames[0] += 1
+
+    def hold(seconds):
+        """Linger on the frame just captured.
+
+        ffmpeg gives every frame of the sequence the same 1/FRAME_RATE on
+        screen, so the way to stop the animation for a moment is to hand it the
+        same picture several times over. Copy the file rather than re-rendering
+        the view: the pixels are identical either way, and a screenshot per held
+        frame would dominate the run time. It costs the GIF very little, since
+        ffmpeg encodes each frame as a difference against the one before and
+        the difference here is nothing at all.
+        """
+        if seconds <= 0:
+            return
+        if not RECORD_GIF:
+            time.sleep(seconds)   # so the live preview pauses too
+            return
+        if frames[0] == 0:
+            return
+        last = os.path.join(FRAME_DIR, f"frame_{frames[0] - 1:04d}.png")
+        for _ in range(max(1, round(seconds * FRAME_RATE))):
+            shutil.copyfile(last, os.path.join(FRAME_DIR, f"frame_{frames[0]:04d}.png"))
             frames[0] += 1
 
     def place_all(placement_for):
@@ -172,10 +227,16 @@ def run_animation():
             rot_placement = App.Placement(App.Vector(0, 0, 0), rot, pivot)
             place_all(lambda item: rot_placement.multiply(item["orig"]))
 
+        # Open on the rack at rest, so the motion has something to start from.
+        swing_to(0.0)
+        capture_frame()
+        hold(PAUSE_START)
+
         App.Console.PrintMessage("Swinging out...\n")
-        for i in range(swing_frames + 1):
+        for i in range(1, swing_frames + 1):
             swing_to((i / swing_frames) * SWING_ANGLE)
             capture_frame()
+        hold(PAUSE_SWUNG)
 
         for item in moving_parts:
             item["rotated"] = item["obj"].Placement.copy()
@@ -189,20 +250,24 @@ def run_animation():
                 App.Vector(move_dir.x * dist, move_dir.y * dist, 0), App.Rotation())
             place_all(lambda item: trans.multiply(item["rotated"]))
 
+        # Each leg below starts where the last one stopped, so skip its first
+        # step: it would re-render a frame the pause is already holding.
         App.Console.PrintMessage("Pulling out of the slot...\n")
-        for i in range(pull_frames + 1):
+        for i in range(1, pull_frames + 1):
             slide_to(i * step_dist)
             capture_frame()
+        hold(PAUSE_OUT)
 
         App.Console.PrintMessage("Sliding back in...\n")
-        for i in range(return_pull, -1, -1):
+        for i in range(return_pull - 1, -1, -1):
             slide_to((i / return_pull) * pull_frames * step_dist)
             capture_frame()
 
         App.Console.PrintMessage("Swinging back in...\n")
-        for i in range(return_swing, -1, -1):
+        for i in range(return_swing - 1, -1, -1):
             swing_to((i / return_swing) * SWING_ANGLE)
             capture_frame()
+        hold(PAUSE_HOME)
 
         App.Console.PrintMessage("Animation complete!\n")
     finally:
