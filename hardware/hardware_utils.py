@@ -44,26 +44,22 @@ CARRIER_LEAD_IN_TIP_FILLET = 0.45
 CARRIER_SLOT_FILLET = 0.45
 CARRIER_HOOK_FILLET = 0.45
 
-# Rounding on the corners a rear bead's half-cut leaves against its outer
-# wall, as a multiple of the tube wall thickness.
-BEAD_HALF_CUT_FILLET = 0.4
-# The matching corners where that cut meets the bore, as a fraction of the
-# outer corner's fillet. Half of it: enough to break the edge that hugs the
-# rod, and to survive slicing, without eating into the seat the rod runs on.
-BEAD_BORE_FILLET_RATIO = 0.5
+# How far round its rod a bay post wraps. Over half a turn, so a post clips
+# onto the rod rather than having to be threaded over the end of it.
+BAY_POST_WRAP_ANGLE = 225.0
 
-# The front openings' top-slice edges, as a fraction of the rear half-cut
-# fillet above. Deliberately smaller: these edges die into the lofted
-# transition, and past roughly half a millimetre OpenCASCADE cannot run the
-# rolling ball out at that junction and refuses the fillet outright.
-BEAD_OPENING_FILLET_RATIO = 0.4
+# Rounding on the vertical edges where a tube has been cut back to a sector --
+# a bay post's opening, and the landing pads on a bay base -- as a multiple of
+# the wall thickness.
+BAY_TUBE_EDGE_FILLET = 0.4
+# The matching edges where such a cut meets the bore, as a fraction of the
+# outer one. Half of it: enough to break the edge that hugs the rod, and to
+# survive slicing, without eating into the seat the rod runs on.
+BAY_TUBE_BORE_FILLET_RATIO = 0.5
 
-# The base's discs are grown past the tube wall so the stacking key holes have
-# material around them, measured in rod diameters across.
-BEAD_BASE_DIAMETER_FACTOR = 2.0
-
-# How wide the front-left tube is opened above the carrier, in degrees.
-BEAD_TOP_OPENING_ANGLE = 135.0
+# The bay base's discs are grown past the tube wall so the stacking key holes
+# have material around them, measured in rod diameters across.
+BAY_BASE_DISC_DIAMETER_FACTOR = 2.0
 
 # How far a cutting solid pokes out past each face it cuts through.
 CUT_OVERSHOOT = 0.01
@@ -125,6 +121,21 @@ def calculate_rod_centers(pcb_width, pcb_length, rod_diameter, gap):
         App.Vector(c_left_x, c_top_y, 0),         # Rear-Left   (3rd rod)
         App.Vector(c_right_x, c_top_y, 0),        # Rear-Right  (4th rod)
     ]
+
+
+def bay_post_opening_angles():
+    """Which way each bay post turns its opening, in rod order.
+
+    All four posts in a bay are the same part and differ only in this angle.
+    Each puts its opening on the rack's diagonal, so the wall wraps the
+    outside of the stack and the gap faces the board -- the side the bay is
+    tightest on, and the one the beads used to clip. The rod layout is not
+    square, so these are the nominal diagonals rather than lines drawn through
+    the rack's centre.
+
+    Returns degrees for [Front-Left, Front-Right, Rear-Left, Rear-Right].
+    """
+    return [45.0, 135.0, 315.0, 225.0]
 
 
 def plate_padding(rod_diameter):
@@ -196,17 +207,28 @@ def refined(shape):
 
     Falls back to the unrefined shape if OpenCASCADE refuses, since a seam is
     a far better outcome than no part at all.
+
+    It is also the repair for a shape that has come out of a boolean carrying
+    duplicate or degenerate faces -- geometrically right, topologically not,
+    and `isValid()` says so. Merging the faces is what fixes that, and when it
+    does the volume guard below has to be skipped: an invalid solid's `Volume`
+    is not a number worth comparing against.
     """
     try:
         result = shape.removeSplitter()
     except Exception as exc:
         App.Console.PrintWarning(f"Shape refine failed, leaving seams: {exc}\n")
         return shape
+    if not result.isValid():
+        App.Console.PrintWarning("Shape refine broke the solid; keeping the original.\n")
+        return shape
+    if not shape.isValid():
+        return result
     # Scale the tolerance to the part: merging spline faces perturbs the volume
     # in the last bits, and on a part of any size that dwarfs a fixed epsilon.
     # A refine that actually changed the geometry would be off by far more.
     tolerance = max(1e-6, abs(shape.Volume) * 1e-7)
-    if not result.isValid() or abs(result.Volume - shape.Volume) > tolerance:
+    if abs(result.Volume - shape.Volume) > tolerance:
         App.Console.PrintWarning("Shape refine changed the solid; keeping the original.\n")
         return shape
     return result

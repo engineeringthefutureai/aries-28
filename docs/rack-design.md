@@ -1,8 +1,8 @@
 # Aries 28 — Rack & Mounting System Design
 
 **Companion to the main design doc. Scope: node bays, rack structure, board retention, cable management, LED integration.**
-Version 0.4 — August 2026 · Status: Concept C (rod-and-bead) is lead candidate; the cartridge is now a parametric model (`hardware/MODEL.md`) and the standard bead is designed and printable; full cartridge assembly still pending
-Changelog: v0.4 — rack moved from drawn files to a generated model; standard 30mm bead designed, printed-form STL committed; plates and carrier re-exported from the model, which means the v0.3 fit test no longer covers the current geometry (see §6 item 3). v0.3 — initial fit test passed (carrier + top/bottom plates on real 6.35mm rods, plywood test-cut, three Pi 5s mounted); confirms §4's rod-bore-fit risk (item 3) for the plate/carrier side, bead side still open. v0.2 — added Concept C rod-and-bead swing rack (lead), demoted pillars to fallback, updated decision + open questions. v0.1 — concepts A/B, materials, detent ladder, buttons.
+Version 0.5 — August 2026 · Status: Concept C (rod-and-bead) is lead candidate; the cartridge is now a parametric model (`hardware/MODEL.md`) and the standard bay parts are designed and printable; full cartridge assembly still pending
+Changelog: v0.5 — the bead split into a pitch-independent **bay base** plus four identical 225° **bay posts** per bay (§4); the posts' diagonal openings retire the 0.5 mm board clip, and the base is now the only part carrying geometry. v0.4 — rack moved from drawn files to a generated model; standard 30mm bead designed, printed-form STL committed; plates and carrier re-exported from the model, which means the v0.3 fit test no longer covers the current geometry (see §6 item 3). v0.3 — initial fit test passed (carrier + top/bottom plates on real 6.35mm rods, plywood test-cut, three Pi 5s mounted); confirms §4's rod-bore-fit risk (item 3) for the plate/carrier side, bead side still open. v0.2 — added Concept C rod-and-bead swing rack (lead), demoted pillars to fallback, updated decision + open questions. v0.1 — concepts A/B, materials, detent ladder, buttons.
 
 ---
 
@@ -32,39 +32,47 @@ Per-board carrier plate (board bolted conventionally); carrier hook-and-rotates 
 
 ## 4. Concept C — Rod-and-bead swing rack (LEAD)
 
-Four vertical **1/4" (6.35mm) smooth stainless rods** between top and bottom plates; printed **spacer beads** threaded onto the rods like an abacus set the bay pitch. The whole cartridge is sandwiched plate-to-plate and bolted into the 2020 frame. Rack height is set by rod length, not printer volume (R9).
+Four vertical **1/4" (6.35mm) smooth stainless rods** between top and bottom plates; printed spacers threaded onto the rods like an abacus set the bay pitch. One spacer was originally one four-tube **bead** per bay, which is where the concept gets its name; as of v0.5 it is a bridged **bay base** plus four **bay posts** (below). The whole cartridge is sandwiched plate-to-plate and bolted into the 2020 frame. Rack height is set by rod length, not printer volume (R9).
 
 **Corner role assignment (each rod has a job):**
 
 | Corner | Role | Carrier feature |
 |---|---|---|
 | Front-left | **Pivot** — carrier swings out like a gate | closed ring / deep-C bore riding the rod (dry PTFE lube = entire bearing budget) |
-| Rear-right | **Latch** — passive notch on the carrier; the **latch bead** on this rod carries the active spring finger + pull tab. Release = right hand pulls tab, left hand rotates. Zero pull force on the board — deliberate two-handed removal by construction. | plain open U-notch + small rectangular engagement notch on the edge |
+| Rear-right | **Latch** — passive notch on the carrier; the rack side carries the active spring finger + pull tab (see §7). Release = right hand pulls tab, left hand rotates. Zero pull force on the board — deliberate two-handed removal by construction. | plain open U-notch + small rectangular engagement notch on the edge |
 | Rear-left | bridged support | open C-notch (departs sideways during swing) |
 | Front-right | independent stack, open side | open C-notch (exit side) |
 
-**All four stacks are bridged** — a bead is one four-tube part. Bridges run up the left side (front-left to rear-left), across the rear, and up the right (front-right to rear-right). They occupy only the bottom 3 mm of each bead, below the height the carrier rides at, so the front-right face stays open. Unlatch rear-right → carrier swings out the front-right opening → board inspectable **with cables still attached**. This is the property no slide-in shelf has.
+**All four stacks are bridged** — a base is one four-station part. Bridges run up the left side (front-left to rear-left), across the rear, and up the right (front-right to rear-right). They occupy only the bottom 3 mm, below the height the carrier rides at, so the front-right face stays open. Unlatch rear-right → carrier swings out the front-right opening → board inspectable **with cables still attached**. This is the property no slide-in shelf has.
 
 *Changed in v0.4.* Earlier revisions left the front-right stack independent, on the assumption that bridging it would close the exit. Bridging below carrier height does not, and one four-tube part is easier to print, handle, and key than three plus a loose stack.
 
-**Bead system:**
-- Standard (compute) bead: sets the **30 mm** compute pitch, keyed to its neighbours so the whole stack inherits one orientation (round rods can't key themselves).
-  - *Built* (`hardware/rack/rack-bead-30.stl`, generated by `bead_generator.py`). Keying is a round stub per tube dropping into a matching hole in the bead above — 2.4 × 1 mm, standing proud of the pitch so stacking height is unaffected by it.
-  - **Orientation is taken at the top, not the bottom.** The top plate receives the topmost bead's four stubs in **blind** holes; keying then propagates down the stack, so the base plate needs nothing. Blind because a through-hole would show on the outside face of the rack — which also means they are **drilled by hand, not cut**: a laser only makes through-holes. Four holes, top plate only, so they stay out of `rack-top-bottom.svg` (one file serves both plates). Not yet in the model.
-- **Anchor beads:** special beads with tabs/T-nut bosses bolting the cartridge to the 2020 frame at mid-heights — attachment and rod anti-bowing brace in one part.
-- Other special beads as needed: cable-comb beads, LED-strip beads, button-mount beads (R8 lives here — the bead is the expansion slot).
-- Extended bead: sets the **42 mm** extended pitch for the tall rack — nodes with a vertical HAT, such as a Pi 5 + NVMe stack (etcd on a control-plane node, or bulk storage — R3). Two pitches → two bead sizes; each rack cartridge uses one size throughout (architecture.md §6).
+*Changed in v0.5.* **The bead is two parts: a bay base and four bay posts.** The base is the bottom 6 mm of a bay — the three bridges, then a 3 mm band matching the carrier's thickness. The carrier rides in that band, resting on the bridges and captured from above by the posts standing around it. Everything above is a plain 225° collar per rod, four identical ones per bay. What the split buys:
+- **The base is pitch-independent.** Only the post changes length between the 30 mm and 42 mm racks, so one base part serves both.
+- **The board gets its clearance back.** Each post turns its opening onto the rack's diagonal, so the wall wraps the outside of the stack; where the old full tube overhung the board by 0.5 mm, the nearest post wall now stands 1.0 mm off it.
+- **A post clips on rather than threading.** 225° is over half the rod.
+- **The geometry got cheap.** The bead's swept, flaring tubes — trimmed to a wedge at carrier height and lofted open above it — are gone; a post is a sector, a bore, four fillets and a stub.
 
-**Tolerance & preload (the failure mode to engineer against):** all-smooth rods mean pitch is set purely by the bead stack — printed height error accumulates. Countermeasures: print each rod's beads in one batch (same profile, same squish); design the **topmost bead as compliant** (printed wave-spring profile, or an O-ring under the top plate) so plate clamping preloads the stack solid regardless of ±0.5mm accumulated error; carriers get ±1mm vertical compliance at the latch.
+A post stands on a **landing pad** — a plain sector of that station's tube in the 3 mm band, cut back with two straight radial lines to wherever the carrier lets it reach, with all four corners rounded (1.0 mm outer, 0.5 mm bore). How far it reaches is measured off the carrier rather than carved from it; the pivot gives up the swing angle as well, off the leading end. On the front pair the pad is only a fifth to a third of the annulus, and the rest of the foot rests on the carrier plate itself, which is what traps the carrier vertically. Small pads are acceptable here — a post carries grams, not the rack.
+
+**Bay base and bay post system:**
+- Standard (compute) post: sets the **30 mm** compute pitch together with the base, keyed to its neighbours so the whole stack inherits one orientation (round rods can't key themselves).
+  - *Built* (`hardware/rack/rack-bay-base.stl` + `hardware/rack/rack-bay-post-30.stl`, generated by `bay_base_generator.py` and `bay_post_generator.py`). Keying is a round stub on top of each post dropping into a matching hole in the base above — 2.4 × 1 mm, standing proud of the pitch so stacking height is unaffected by it.
+  - **Orientation is taken at the top, not the bottom.** The top plate receives the topmost bay's four stubs in **blind** holes; keying then propagates down the stack, so the base plate needs nothing. Blind because a through-hole would show on the outside face of the rack — which also means they are **drilled by hand, not cut**: a laser only makes through-holes. Four holes, top plate only, so they stay out of `rack-top-bottom.svg` (one file serves both plates). Not yet in the model.
+- **Anchor bases:** special bases with tabs/T-nut bosses bolting the cartridge to the 2020 frame at mid-heights — attachment and rod anti-bowing brace in one part.
+- Other special parts as needed: cable-comb, LED-strip and button-mount variants (R8 lives here — the bay is the expansion slot). A post is now a good host for the per-rod ones, since it is small and there are four per bay.
+- Extended post: sets the **42 mm** extended pitch for the tall rack — nodes with a vertical HAT, such as a Pi 5 + NVMe stack (etcd on a control-plane node, or bulk storage — R3). Two pitches → two post lengths and one base; each rack cartridge uses one length throughout (architecture.md §6).
+
+**Tolerance & preload (the failure mode to engineer against):** all-smooth rods mean pitch is set purely by the stack — printed height error accumulates, and there are now two parts per bay contributing it rather than one. Countermeasures: print each rod's parts in one batch (same profile, same squish); design the **topmost post as compliant** (printed wave-spring profile, or an O-ring under the top plate) so plate clamping preloads the stack solid regardless of ±0.5mm accumulated error; carriers get ±1mm vertical compliance at the latch.
 
 **Rod ends:** blind pockets in top/bottom plates; frame bolts provide clamping force. No threads, no e-clips in v1. Top/bottom plates are laser-cut sheet (`hardware/rack/rack-top-bottom.svg`) rather than printed; their rod-hole placement is shared with the carrier's rod/pivot bores (`hardware/carrier/carrier-rpi-b.svg`). That sharing is now structural: both come from one function in the model (`hardware/MODEL.md`), so the two cannot drift apart.
 
 **Assembly property:** the entire populated rack is a **cartridge** — build, wire, and bench-test it outside the tower, then drop it in as one unit.
 
 **Known geometry risks (test before committing the fleet):**
-1. Swing arc: the carrier's **rear-left** corner is the binding one, not the rear-right — it sweeps at the rod-to-rod diagonal about the front-right pivot and must clear the **front-left** bead. The rod layout puts it exactly one `Gap` clear of the front-left *rod* at any angle by construction, so the whole question is how much fatter the bead is than the rod: clearance is `Gap - WallThickness`, currently 2.0 − 2.5 = **−0.5 mm**. Either the gap grows or the wall shrinks. Sets minimum rod spacing vs carrier depth.
+1. Swing arc: the carrier's **rear-left** corner is the binding one, not the rear-right — it sweeps at the rod-to-rod diagonal about the front-right pivot and must clear the **front-left** station. The rod layout puts it exactly one `Gap` clear of the front-left *rod* at any angle by construction, so the whole question is how much fatter the printed part is than the rod: clearance is `Gap - WallThickness`, currently 2.0 − 2.5 = **−0.5 mm**. Either the gap grows or the wall shrinks. Sets minimum rod spacing vs carrier depth. *Measured on the model:* no longer bites. The posts are clear of it entirely — their openings face the diagonal and they sit above the carrier anyway — and the pads are cut back to a measured opening with 2° of relief, so swept a degree at a time through 45° the carrier and its board touch nothing. The −0.5 mm remains the reason the pads are as small as they are.
 2. Hand clearance: reaching the rear-right latch between bays at the 30 mm compute pitch. Escape hatch: front-actuated pushrod along the carrier edge.
-3. Bead bore fit on 6.35mm rod: coupon-test printed bore (start 6.5mm, ream to slip fit). The bead is modelled on the nominal rod with no clearance and carries a `RodClearance` parameter for exactly this test. **Bead bore still open** — designed and printable, not yet coupon-tested.
+3. Printed bore fit on 6.35mm rod: coupon-test printed bore (start 6.5mm, ream to slip fit). Bay base and bay post are both modelled on the nominal rod with no clearance and carry a `RodClearance` parameter for exactly this test. **Bore still open** — designed and printable, not yet coupon-tested. The post adds a second question the bead did not have: a 225° collar has to *clip* onto the rod, so its bore wants a snap fit where the base's wants a slip fit.
 4. **The v0.3 fit test no longer covers the current parts.** It confirmed the carrier/plate rod-hole interface as it stood then. The model was not built to reproduce that geometry — the rod gap and the front-left rod position both differ — and both files have since been re-exported from it. Carrier and plates still agree with each other by construction (one function places the rods for both), but the pair wants re-cutting in plywood before the fleet is committed.
 
 ## 5. Decision
@@ -84,23 +92,23 @@ Four vertical **1/4" (6.35mm) smooth stainless rods** between top and bottom pla
 
 **LED integration:** per-bay WS2812B segment aimed into the carrier's polished edge → engraved traces + node glyph glow in status color. The carriers *are* the status display. Engrave on back face for forward glow; polish light-entry edges.
 
-## 7. Latch — wear ladder (lives in the latch bead, not the carrier)
+## 7. Latch — wear ladder (lives in the rack, not the carrier)
 
-The carrier's latch feature is a passive notch; all spring/wear geometry is in the **latch bead** — a $0.20 replaceable part, iterated independently of the fleet's carriers. Escalate only when the previous rung measurably fails (100-cycle bench test, logged):
+The carrier's latch feature is a passive notch; all spring/wear geometry is in a **latch variant of the base** — a $0.20 replaceable part, iterated independently of the fleet's carriers. It has to be the base rather than a post: the notch is on the carrier, and the carrier rides in the base's band. Escalate only when the previous rung measurably fails (100-cycle bench test, logged):
 1. **v1** — printed PETG cantilever finger + pull tab, tip engaging the carrier notch (~1mm engagement, ramped on the insert side so closing self-latches, square on the release side so opening requires the tab).
 2. **v1.5** — finger tip carries a pressed-in 4.5mm steel BB riding the carrier notch — wear moves to the cheap plate edge.
-3. **v2** — ball-nose spring plunger (M3/M4 brass, ~$1) threaded into the bead body, adjustable preload.
+3. **v2** — ball-nose spring plunger (M3/M4 brass, ~$1) threaded into the base body, adjustable preload.
 
 ## 8. Cable management (structural + aesthetic)
 
 - Ethernet and XT30 exit toward the **rear/latch zone** — push/pull forces land next to supported corners (R2 by construction). Verify against swing direction in CAD: cables must feed the swing, not fight it.
-- Cable-comb beads on the rear rods; one labeled lane per bay.
+- Cable-comb posts on the rear rods; one labeled lane per bay.
 - Slack loops sized to run out *before* the swing completes if still plugged — forgetting a cable stops rotation instead of ripping a connector.
 - SD slots face the open front-right side; card swaps never disturb cables.
 
 ## 9. Stretch — per-bay power buttons
 
-One recessed momentary button per bay, mounted on the rack (button-mount bead), wired into the bay's power harness.
+One recessed momentary button per bay, mounted on the rack (button-mount post), wired into the bay's power harness.
 - **Pi 5 nodes:** J2 header (dedicated 2-pin) — momentary = graceful shutdown; press while halted = **power on**. No GPIO consumed.
 - **Pi 4/3 nodes:** GPIO3 + GND with `dtoverlay=gpio-shutdown` — identical semantics incl. boot-from-halt. (GPIO3 = I2C1 SCL, unused.)
 - **Harness:** one 4-pin bay connector (5V, GND, BTN, GND) or XT30 + 2-pin JST — decide before crimping the fleet.
@@ -113,9 +121,9 @@ One recessed momentary button per bay, mounted on the rack (button-mount bead), 
 1. Measure: Pi 5 + X1001 stack height w/ standoffs; SD slot clearance vs carrier plane; XT30 pigtail exit; J2 header position on Pi 5.
 2. Swing-arc check: rod spacing vs carrier depth so rear-right corner clears rear-left stack (mockup first — this can kill the concept).
 3. Hand/latch clearance at the 30 mm compute pitch; pushrod fallback geometry if cramped.
-4. Bead bore fit on 6.35mm rod — coupon 6.4/6.5/6.6mm. (Carrier pivot bore fit confirmed by the v0.3 initial fit test — no longer open.)
-5. Bead stack tolerance: measure a 10-bead batch stack height; size the compliant top bead accordingly.
+4. Printed bore fit on 6.35mm rod — coupon 6.4/6.5/6.6mm, and a second ladder for the post, whose 225° collar has to clip on rather than slip on. (Carrier pivot bore fit confirmed by the v0.3 initial fit test — no longer open.)
+5. Stack tolerance: measure a 10-bay batch stack height (base + post each contribute); size the compliant top post accordingly.
 6. Detent engagement depth for PETG finger — coupon 0.3/0.4/0.6mm.
 7. Carrier outline: full plate vs skeletal vs acrylic — one of each behind glass with an LED before fleet commit.
 8. Rod length + plate pocket depth vs frame interior height; cartridge drop-in clearance.
-9. Bay button: recessed panel-mount part that fits a button bead; J2 mating connector part number (1.0mm pitch — verify).
+9. Bay button: recessed panel-mount part that fits a button post; J2 mating connector part number (1.0mm pitch — verify).
