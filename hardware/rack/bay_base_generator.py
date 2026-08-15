@@ -95,6 +95,38 @@ class ParametricBayBase:
         obj.addProperty("App::PropertyAngle", "PadRelief", "Pads",
                         "Extra angle trimmed off each end of a pad").PadRelief = 2.0
 
+        # The cable comb: a row of C-clips hanging off the back of the rear
+        # bridge, holding the ethernet runs that come up the rack from below.
+        # One clip per bay, since the bottom bay's comb has to pass every
+        # bay's cable. Sizes are imperial because the cable is: a Cat5e/6 jacket
+        # is a whisker under 7/32", and the mouth at 5/32" is narrow enough that
+        # a cable has to be pressed past it rather than falling out.
+        obj.addProperty("App::PropertyInteger", "CableCount", "Cable comb",
+                        "How many cables the comb holds; one per bay").CableCount = 8
+        obj.addProperty("App::PropertyLength", "CableHoleDiameter", "Cable comb",
+                        "Bore of one clip, i.e. the cable it takes").CableHoleDiameter = 7 / 32 * 25.4
+        obj.addProperty("App::PropertyLength", "CableMouthWidth", "Cable comb",
+                        "Opening a cable is pressed through").CableMouthWidth = 5 / 32 * 25.4
+        # Also the material outboard of the two end clips, halved at each end,
+        # so every clip in the row has the same wall around it.
+        obj.addProperty("App::PropertyLength", "CableGap", "Cable comb",
+                        "Material between neighbouring clips").CableGap = 1 / 8 * 25.4
+        # Each bore is tangent to the back of the bridge, so the bridge is the
+        # back of every clip and none of this depth is spent on a wall that is
+        # already there. At 6mm the material either side of a mouth comes out
+        # about 1.3mm thick.
+        obj.addProperty("App::PropertyLength", "CableCombDepth", "Cable comb",
+                        "How far the comb stands proud of the rear bridge").CableCombDepth = 6.0
+        obj.addProperty("App::PropertyLength", "CableCombOffset", "Cable comb",
+                        "From the base's right edge to the right end of the comb").CableCombOffset = 15.15
+        obj.addProperty("App::PropertyLength", "CableClipFillet", "Cable comb",
+                        "Rounding on the mouth of each clip").CableClipFillet = 0.5
+        # Where the backing beam runs into the two rear landing pads. Four
+        # corners, two per pad, and they are the load path from the comb into
+        # the rest of the base, so they are rounded harder than the clips.
+        obj.addProperty("App::PropertyLength", "CombBackingFillet", "Cable comb",
+                        "Rounding where the backing meets a rear landing pad").CombBackingFillet = 1.0
+
         # Published so a post can be placed off it by expression instead of
         # having its position written out when the assembly is built. Output,
         # so writing it during a recompute does not touch the object again.
@@ -130,6 +162,10 @@ class ParametricBayBase:
         # what was asked for no matter what clearance the bore carries.
         outer_radius = bore_radius + wall
 
+        # The discs the key holes are cut into, and the width the base's rear
+        # corners end at -- the backing beam runs out to the same line.
+        disc_radius = rod_diameter * hardware_utils.BAY_BASE_DISC_DIAMETER_FACTOR / 2.0
+
         rod_centers = hardware_utils.calculate_rod_centers(pcb_width, pcb_length, rod_diameter, gap)
         obj.RodCenters = rod_centers
 
@@ -150,26 +186,51 @@ class ParametricBayBase:
             seated = carrier.Shape.copy()
             seated.Placement = App.Placement(App.Vector(0, 0, web_height), App.Rotation())
 
+        pads = [_landing_pad(
+            center, bore_radius, outer_radius, web_height, web_height + pad_height,
+            wall, seated, carrier_thickness,
+            float(obj.PadRelief) + (float(obj.SwingAngle) if index == 1 else 0.0),
+            trailing_only=(index == 1))
+            for index, center in enumerate(rod_centers)]
+
+        # The cable comb hangs off the back of the rear bridge, so it only
+        # exists if that bridge does, but it stands the full thickness of the
+        # base rather than the bridge's own 3mm. Its block goes in with
+        # everything else and is carved after the fuse, once the plane its
+        # bores are tangent to has stopped being a face.
+        comb = (_cable_comb(obj, rod_centers, outer_radius, bore_radius, rod_diameter)
+                if web_height > 0 else None)
+
         parts = []
-        for index, center in enumerate(rod_centers):
-            pad = _landing_pad(
-                center, bore_radius, outer_radius, web_height, web_height + pad_height,
-                wall, seated, carrier_thickness,
-                float(obj.PadRelief) + (float(obj.SwingAngle) if index == 1 else 0.0),
-                trailing_only=(index == 1))
-            if pad is not None:
-                parts.append(pad)
+        if comb is not None:
+            # The backing beam and the two rear pads are one piece: the beam is
+            # what carries the comb's load into them. Fuse and round them here,
+            # in isolation, for the same reason the pads are built that way --
+            # on a bare prism every vertical edge runs cap to cap and the
+            # fillets take; buried in the finished base they die into the rear
+            # bridge part way down and OpenCASCADE refuses them.
+            beam = comb.backing(rod_centers, web_height, web_height + pad_height)
+            for index in (2, 3):
+                if pads[index] is not None:
+                    beam = beam.fuse(pads[index])
+                    pads[index] = None
+            parts.append(hardware_utils.fillet_corners(
+                beam, comb.backing_corners(rod_centers, outer_radius, bore_radius,
+                                           float(obj.CombBackingFillet)),
+                context="Comb backing corner"))
+            parts.append(comb.block(web_height + pad_height))
+
+        parts.extend(pad for pad in pads if pad is not None)
 
         # Under the pads: the tubes' lower length, the webs that tie them
-        # together, and the discs the key holes are cut into. Grown past the
-        # tube wall, the discs come out flush with the rack plate's edge, since
-        # the plate is padded by the same rod diameter.
+        # together, and the discs. Grown past the tube wall, the discs come out
+        # flush with the rack plate's edge, since the plate is padded by the
+        # same rod diameter.
         for center in rod_centers:
             tube = Part.makeCylinder(outer_radius, web_height)
             tube.translate(center)
             parts.append(tube)
 
-        disc_radius = rod_diameter * hardware_utils.BAY_BASE_DISC_DIAMETER_FACTOR / 2.0
         if web_height > 0 and disc_radius > outer_radius:
             for center in rod_centers:
                 disc = Part.makeCylinder(disc_radius, web_height)
@@ -191,11 +252,26 @@ class ParametricBayBase:
             final_shape = final_shape.cut(hardware_utils.through_cutter(
                 bore_radius, web_height + pad_height, center))
 
-        # Merge the face splits the fuse leaves behind, before the key holes go
-        # in. Those come within a twentieth of a millimetre of both the bore
-        # and the outer wall, and cutting something that close into a solid
-        # still diced up by its own booleans is what breaks it.
+        if comb is not None:
+            final_shape = comb.carve(final_shape, web_height + pad_height)
+
+        # Merge the face splits the booleans leave behind, before anything
+        # delicate happens to the solid. Two things here are delicate: the key
+        # holes come within a twentieth of a millimetre of both the bore and
+        # the outer wall, and the corners where the comb runs into the base sit
+        # on curved faces. Neither survives being worked on a solid still diced
+        # up by its own booleans -- the same fillet that fails on 240 faces
+        # takes cleanly on 130.
         final_shape = hardware_utils.refined(final_shape)
+
+        # Round where the comb meets the rest of the base. After the refine,
+        # and before the key holes, which have no bearing on it either way.
+        if comb is not None:
+            final_shape = hardware_utils.fillet_corners(
+                final_shape,
+                comb.merge_corners(rod_centers, disc_radius, outer_radius,
+                                   float(obj.CombBackingFillet)),
+                context="Comb merge corner")
 
         # Receive the four keys of the bay below.
         key_radius = float(obj.KeyDiameter) / 2.0
@@ -213,6 +289,175 @@ class ParametricBayBase:
                     hardware_utils.through_cutter(key_radius, key_height, at))
 
         obj.Shape = hardware_utils.refined(final_shape)
+
+
+class _CableComb:
+    """A row of C-clips off the back of the rear bridge, for the cable runs.
+
+    The ethernet comes up the rack from below, so a clip is a vertical bore
+    with its mouth facing out the back: press a cable in through the mouth and
+    it stays there. Every bay base carries a full row, so a cable is caught
+    every bay pitch on its way up, and the row is as long as the rack is deep
+    in bays -- the bottom bay's comb has every bay's cable running through it.
+
+    Each bore is **tangent to the back of the bridge** rather than standing off
+    it. That is what keeps the comb shallow: the bridge is the back wall of
+    every clip, so the depth buys nothing but the cable itself plus the horns
+    either side of the mouth.
+
+    A mouth narrower than the bore is the whole trick. At 5/32" across a 7/32"
+    bore the clip wraps 269 degrees, so it holds a cable that has been pressed
+    past the horns, and the horns are what has to flex to let it.
+    """
+
+    def __init__(self, obj, rod_centers, outer_radius, bore_radius, rod_diameter):
+        self.hole_radius = float(obj.CableHoleDiameter) / 2.0
+        self.mouth = float(obj.CableMouthWidth)
+        self.fillet = float(obj.CableClipFillet)
+        gap = float(obj.CableGap)
+        depth = float(obj.CableCombDepth)
+        count = int(obj.CableCount)
+
+        _fl, _fr, _rl, rr_center = rod_centers
+
+        # Backed up to the line tangent to both rear bores -- as far forward as
+        # the comb can reach without eating into a rod. Below the pads that is
+        # buried in the bridge and does nothing; through the pad band it is the
+        # root the comb cantilevers off, and it is the whole reason the comb
+        # can stand the full height of the base.
+        self.front = rr_center.y + bore_radius
+        self.rear = rr_center.y + outer_radius        # back of the rear bridge
+        self.hole_y = self.rear + self.hole_radius    # tangent to it
+        self.face = self.rear + depth                 # back of the comb
+
+        # Half a gap at each end, so the two end clips carry exactly the wall
+        # an inner one has between itself and its neighbour.
+        pitch = 2 * self.hole_radius + gap
+        span = count * 2 * self.hole_radius + (count - 1) * gap
+        self.right = (rr_center.x + hardware_utils.plate_padding(rod_diameter)
+                      - float(obj.CableCombOffset))
+        self.left = self.right - span - gap
+        self.centers = [self.left + gap / 2.0 + self.hole_radius + step * pitch
+                        for step in range(count)]
+
+    def backing(self, rod_centers, z_lo, z_hi):
+        """The beam that ties the comb into the two rear landing pads.
+
+        Below the pads the rear bridge already fills this, so the beam only has
+        to exist through the pad band -- and there it turns the back of the
+        bridge from a 3mm web into the full thickness of the base, running from
+        the line tangent to both rear bores back to the bridge's own rear face.
+
+        It stops at the two rear rod centres. That is far enough to be buried
+        in both pads -- at a rod centre a pad spans exactly this beam's depth,
+        bore to outer wall -- so the beam dies inside them rather than ending
+        on a face of its own.
+        """
+        _fl, _fr, rl_center, rr_center = rod_centers
+        return Part.makeBox(rr_center.x - rl_center.x, self.rear - self.front,
+                            z_hi - z_lo, App.Vector(rl_center.x, self.front, z_lo))
+
+    def backing_corners(self, rod_centers, outer_radius, bore_radius, radius):
+        """The corners where the beam runs into the rear pads.
+
+        A pad bulges forward of the beam's front face once it is far enough
+        round to have dropped `bore_radius` in y, so it crosses that face at
+        `reach` either side of its rod. Stopping the beam at the rod centres
+        leaves only the inboard crossing of each pad exposed -- the outboard
+        one is past the end of the beam -- so there are two of these, and they
+        carry the comb's load into the base.
+        """
+        _fl, _fr, rl_center, rr_center = rod_centers
+        reach = math.sqrt(max(0.0, outer_radius ** 2 - bore_radius ** 2))
+        return [(rl_center.x + reach, self.front, radius),
+                (rr_center.x - reach, self.front, radius)]
+
+    def block(self, height):
+        """The bar the clips are cut out of, the full thickness of the base.
+
+        Running forward to `front` does double duty: it is the backing that
+        makes the comb stiff, and it laps 2.5mm into the rear bridge rather
+        than meeting it on a shared plane -- a fuse OpenCASCADE has to reason
+        about, versus one it does not.
+        """
+        return Part.makeBox(self.right - self.left, self.face - self.front, height,
+                            App.Vector(self.left, self.front, 0))
+
+    def merge_corners(self, rod_centers, disc_radius, outer_radius, radius):
+        """The sharp corners the comb leaves where it runs into the base.
+
+        Four of them, and none is a clip:
+
+          left end, against the rear pad    through the pad band
+          left end, against the disc        through the web band, where the
+                                            base's rounded rear corner is
+          right end, stepping off the       full height, the shoulder where the
+          backing                           comb stops and the beam carries on
+          bridge running onto the disc      the acute one, right of the comb,
+                                            where the bridge's back face runs
+                                            out onto the rear-right disc
+
+        The two at the left end are stacked rather than one edge because the
+        base's own outline steps there: below the pads it is the disc that
+        reaches furthest back, above them it is the pad.
+        """
+        _fl, _fr, _rl, rr_center = rod_centers
+        reach = math.sqrt(max(0.0, disc_radius ** 2 - outer_radius ** 2))
+        # The disc one before the pad one, even though it is the lower of the
+        # two: they share an end face, and rounding the upper first drags the
+        # lower a few hundredths sideways -- far enough that looking it up by
+        # position afterwards finds nothing.
+        return [
+            (self.left, rr_center.y + disc_radius, radius),
+            (self.left, self.rear, radius),
+            (self.right, self.rear, radius),
+            (rr_center.x - reach, self.rear, radius),
+        ]
+
+    def carve(self, shape, height):
+        """Cut the bores and their mouths, and round what that leaves."""
+        half = self.mouth / 2.0
+        for x in self.centers:
+            shape = shape.cut(hardware_utils.through_cutter(
+                self.hole_radius, height, App.Vector(x, self.hole_y, 0)))
+            shape = shape.cut(hardware_utils.through_box(
+                self.mouth, self.face - self.hole_y + hardware_utils.CUT_OVERSHOOT,
+                height, App.Vector(x - half, self.hole_y, 0)))
+
+        if self.fillet <= 0:
+            return shape
+
+        # Two corners per mouth: the tip of each horn, where the mouth runs out
+        # to the back face, and the barb behind it where the mouth wall meets
+        # the bore. The barb is the one a cable is dragged across.
+        shoulder = math.sqrt(max(0.0, self.hole_radius ** 2 - half ** 2))
+        corners = []
+        for x in self.centers:
+            for side in (-1.0, 1.0):
+                corners.append((x + side * half, self.face, self.fillet))
+                corners.append((x + side * half, self.hole_y + shoulder, self.fillet))
+        # And the comb's own two back corners, which are nobody's clip.
+        for x in (self.left, self.right):
+            corners.append((x, self.face, self.fillet * 2.0))
+        return hardware_utils.fillet_corners(shape, corners, context="Cable clip")
+
+
+def _cable_comb(obj, rod_centers, outer_radius, bore_radius, rod_diameter):
+    """The bay's cable comb, or None if it has been switched off."""
+    if int(obj.CableCount) <= 0 or float(obj.CableHoleDiameter) <= 0:
+        return None
+    if not 0 < float(obj.CableMouthWidth) < float(obj.CableHoleDiameter):
+        App.Console.PrintWarning(
+            "Bay base: the cable mouth has to be narrower than the bore and wider "
+            "than nothing, or the clips will not hold; leaving the comb off.\n")
+        return None
+    comb = _CableComb(obj, rod_centers, outer_radius, bore_radius, rod_diameter)
+    if comb.face <= comb.hole_y + comb.hole_radius:
+        App.Console.PrintWarning(
+            "Bay base: the comb is not deep enough to contain its own bores; "
+            "leaving it off.\n")
+        return None
+    return comb
 
 
 def _landing_pad(center, bore_radius, outer_radius, z_lo, z_hi, wall,

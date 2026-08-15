@@ -258,9 +258,14 @@ def fillet_corners(shape, corners, context=""):
     """Round the vertical edge standing at each corner.
 
     `corners` is a sequence of (x, y, radius). Entries with a non-positive
-    radius are skipped, as are corners no longer present on the shape. A
-    fillet OpenCASCADE refuses is reported and left square rather than
-    aborting the whole part.
+    radius are skipped, as are corners no longer present on the shape.
+
+    A corner that will not take the radius asked for is retried smaller before
+    being given up on, and anything that comes back invalid is rolled back.
+    OpenCASCADE does not always refuse outright: on a tight corner it will
+    happily hand back a solid that no longer closes, and one such fillet
+    poisons every boolean after it. An edge left square is a far better
+    outcome, so nothing leaves here that did not survive `isValid`.
     """
     for cx, cy, radius in corners:
         if radius <= 0:
@@ -270,11 +275,18 @@ def fillet_corners(shape, corners, context=""):
             App.Console.PrintWarning(
                 f"{context}: no corner at ({cx:.3f}, {cy:.3f}) to fillet.\n")
             continue
-        try:
-            shape = shape.makeFillet(radius, [edge])
-        except Exception as exc:
-            App.Console.PrintError(
-                f"{context}: fillet failed at ({cx:.3f}, {cy:.3f}): {exc}\n")
+        for attempt in (radius, radius / 2.0, radius / 4.0):
+            try:
+                rounded = shape.makeFillet(attempt, [edge])
+            except Exception:
+                continue
+            if rounded.isValid():
+                shape = rounded
+                break
+        else:
+            App.Console.PrintWarning(
+                f"{context}: no fillet would take at ({cx:.3f}, {cy:.3f}); "
+                "leaving it square.\n")
     return shape
 
 

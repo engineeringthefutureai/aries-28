@@ -12,7 +12,7 @@ See the fabrication legend in [`../README.md`](../README.md) for method tags and
 | File | Route | Purpose |
 |---|---|---|
 | `rack-top-bottom.svg` | `[SHEET]` | Laser-cut top and bottom plates for the rod-and-bead cartridge (`docs/rack-design.md` §4), with the rod holes that seat the four 6.35mm rods. |
-| `rack-bay-base.stl` | `[PRINT]` | The bay base: four rod stations tied together by three webs, with the carrier riding in the 3mm band above them. PETG. Pitch-independent — the same part serves the 30mm and 42mm racks. |
+| `rack-bay-base.stl` | `[PRINT]` | The bay base: four rod stations tied together by three webs, with the carrier riding in the 3mm band above them, and a cable comb on the back of the rear bridge. PETG. Pitch-independent — the same part serves the 30mm and 42mm racks. |
 | `rack-bay-post-30.stl` | `[PRINT]` | The bay post: one of the four collars that fill the rest of a 30mm bay, keyed into the base above so a stack cannot rotate out of register. PETG. Four per bay, all identical. Named for the pitch it sets — the 42mm post is still to come. |
 | `bay_base_generator.py`, `bay_post_generator.py` | — | Generators for the two parts above. |
 | `rack_plate_generator.py`, `rods_generator.py` | — | Generators for the plates and the rods. |

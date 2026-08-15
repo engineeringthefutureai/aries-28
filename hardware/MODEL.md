@@ -205,6 +205,64 @@ that is trivial to build, to fillet, to print and to think about.
 The base does **not** change with the pitch, so there is one `rack-bay-base.stl`
 for both the 30 mm and the 42 mm rack.
 
+### The cable comb
+
+Hanging off the back of the rear bridge, a row of C-clips for the ethernet
+runs that come up the rack from below:
+
+| | |
+|---|---|
+| Clips | 8 — one per bay, since the bottom bay's comb passes every bay's cable |
+| Bore | 7/32 in (5.556 mm), the cable itself |
+| Mouth | 5/32 in (3.969 mm), so the clip wraps 269° and a cable has to be pressed in |
+| Between clips | 1/8 in (3.175 mm), and half that outboard of the two end ones |
+| Depth | 6 mm proud of the bridge |
+| Height | 6 mm — the full thickness of the base, not just the bridge's 3 mm |
+| Backing | a beam rod-centre to rod-centre, forward to the line tangent to both rear bores |
+| Offset | 15.15 mm from the base's right edge to the right end of the comb |
+
+Each bore is **tangent to the back of the bridge** rather than standing off it,
+which is what keeps the comb shallow: the bridge is the back wall of every
+clip, so the 6 mm buys the cable plus the horns either side of the mouth and
+nothing else. Those horns come out 1.3 mm thick, and everything the cable can
+touch is rounded — 0.5 mm on each horn tip and on the barb behind it, 1.0 mm
+on the comb's two ends.
+
+The comb stands the **full thickness of the base**, so its clips are as tall as
+the bay's landing pads rather than only as tall as the bridge — and standing
+that tall, its upper half sits in the band the carrier rides in with only a 3 mm
+web under it. So it is backed by a **beam**: rod centre to rod centre, forward
+to the line tangent to both rear bores, which is as far in as anything can reach
+without eating into a rod. Below the pads that beam is buried in the bridge and
+does nothing. Through the pad band it is the root the comb cantilevers off, and
+it swallows both rear landing pads on the way, which is what carries the comb's
+load into the rest of the base. It also turns the back of the base into a
+full-height beam rather than a 3 mm web, which the rack gets for free.
+
+The carrier's own deepest reach is at rest, and it only moves forward as it
+swings, so that tangent line keeps one rod radius (3.175 mm) of clearance at the
+worst moment.
+
+Six corners come out of all that, and all six are rounded at 1.0 mm:
+
+| Where | |
+|---|---|
+| Beam into a rear pad | 2 — one per pad, on the inboard side; the beam stops at the rod centres, so the outboard crossings are past its end |
+| Comb's left end | 2 — stacked, because the base's outline steps there: the disc reaches furthest back below the pads, the pad above them |
+| Comb's right end | 1 — the shoulder where the comb stops and the beam carries on |
+| Bridge onto the rear-right disc | 1 — pre-existing, and the shallowest of them at 153° |
+
+Two things had to be got right for those to take at all. They are filleted
+**after** the refine, not before: the same fillet that fails on the 240-face
+solid the booleans leave takes cleanly on the 130-face one. And the two at the
+comb's left end go bottom-first, since rounding the upper one drags the lower a
+few hundredths sideways — far enough that looking it up by position afterwards
+finds nothing.
+
+The whole row lands on the rear bridge with nothing overhanging. 8 clips need
+66.7 mm of the bridge's 78.7 mm, so the offset is what is left after the end
+walls: at more than 15.15 mm the row runs off the left end.
+
 **Bay post** — one of the four collars above it:
 
 | | |
@@ -240,6 +298,14 @@ the model:
   through 45°, the carrier and its board clear every pad and every post with
   nothing touching — but whether the hook clears the left rods far enough to
   then lift the carrier away has not been worked out.
+- **The cable runs clip the top and bottom plates by 0.675 mm.** A bore
+  tangent to the bridge puts the cable's near edge at y=66.85 and the plates
+  reach y=67.525, so each of the eight cables overlaps a plate corner by
+  5.0 mm³ where it passes. Only at the two plates — the bays themselves are
+  clear — and a cable will deflect round it, but the tidy fix is a shallow
+  scallop on the plates' rear edge at the eight clip positions, which is not
+  modelled. Moving the comb back 0.7 mm would also do it, at the cost of the
+  tangency.
 - **Two posts stand mostly on the carrier, not on their pad.** A post's foot is
   a 225° annulus and the carrier leaves it far less than that to stand on: the
   rear pair land 93–99% on pad, but the front-right is at 32% and the
