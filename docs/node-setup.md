@@ -113,10 +113,12 @@ Troubleshooting:
 ## 4. Install k3s (first server, quorum-capable, embedded etcd)
 
 ```bash
-curl -sfL https://get.k3s.io | sh -s - server --cluster-init
+curl -sfL https://get.k3s.io | sh -s - server --cluster-init --secrets-encryption
 ```
 
 `--cluster-init` initializes **embedded etcd** (not the default SQLite). This is what makes the dedicated etcd partition meaningful and lets you add cp-2/cp-3 later without rebuilding — the single-server-now → HA-later path.
+
+`--secrets-encryption` encrypts Secrets at rest in etcd. It belongs **at install time**; enabling it later is supported but costs a two-restart enable-and-rekey cycle across every server (§8). Without it, every Secret in the cluster is stored in etcd as base64 — encoding, not encryption — and is directly readable from the NVMe or from any etcd snapshot.
 
 `--disable traefik` is optional if you plan to bring your own ingress via GitOps later. For a first node, leave defaults.
 
@@ -154,7 +156,7 @@ Node-join token (needed for cp-2/cp-3 and workers):
 ```bash
 sudo cat /var/lib/rancher/k3s/server/node-token
 ```
-- **Add another server (control-plane quorum):** on cp-2/cp-3, install with `server --server https://<cp-1-ip>:6443 --token <token>` (still on their own etcd partitions).
+- **Add another server (control-plane quorum):** on cp-2/cp-3, install with `server --server https://<cp-1-ip>:6443 --token <token> --secrets-encryption` (still on their own etcd partitions). The flag goes on every server (§8); a server started without it cannot read what the others wrote.
 - **Add a worker (agent):** install with `agent --server https://<cp-1-ip>:6443 --token <token>`.
 - HA needs **3 servers** for etcd quorum: 1 = SPOF, 2 = worse than 1, 3 = any single node can be pulled live.
 
@@ -166,10 +168,84 @@ Everything above is deterministic → it belongs in an Ansible **base role** so 
 - cmdline params (cgroup + NVMe) — universal, every node
 - partition + label + fstab (role-conditional: storage gets large data, cp gets minimal)
 - k3s install (server `--cluster-init` for first, `server --server` for HA joins, `agent` for workers)
+- `--secrets-encryption` on every server (§8) — trivial as an install flag, awkward to retrofit, and therefore role-managed rather than per-node manual
 - hostname per inventory
 - kubeconfig fetch
 
 Fleet mapping (from the main design doc): `aries-cp-1..3` = Pi 5 2 GB servers; `aries-st-1` = Pi 5 4 GB storage; `aries-gw` = Pi 4 gateway (not in k3s); `aries-face` = Pi 3A+ (LED/kiosk, not in k3s).
+
+---
+
+## 8. Secrets encryption at rest
+
+Kubernetes Secrets are **base64-encoded, not encrypted**. On a k3s server with embedded etcd they live on the etcd partition (§2) in a form anyone with the disk can read. `--secrets-encryption` makes the API server encrypt them (AES-CBC) before they reach etcd, using a key in `/var/lib/rancher/k3s/server/cred/encryption-config.json`.
+
+### Scope of protection
+
+The flag name overstates its reach. What it covers:
+
+- **Offline access to the data** — a stolen NVMe, an etcd snapshot copied elsewhere, a decommissioned disk leaving the premises. This is the case the flag genuinely addresses.
+
+What it does not cover:
+
+- **Callers holding `get secrets` RBAC.** The API server decrypts transparently; `kubectl get secret -o yaml` returns plaintext exactly as before.
+- **Root on the server node.** The key resides on the same disk as the data it protects, so a whole-node compromise yields both halves.
+
+The flag therefore hardens backups and retired disks. It is not a substitute for RBAC discipline, nor for keeping secret material out of the cluster in the first place.
+
+### Enabling on an existing cluster
+
+New builds set the flag at install (§4). Retrofitting takes **two restarts**, not one — `enable` only stages the change:
+
+```bash
+sudo k3s secrets-encrypt status        # Encryption Status: Disabled, no configuration file found
+sudo k3s secrets-encrypt enable        # generates the key, stages the change
+```
+
+Add `--secrets-encryption` to the server's own arguments (`/etc/systemd/system/k3s.service` or `/etc/rancher/k3s/config.yaml`) so the flag survives the restart and every restart after it, then restart:
+
+```bash
+sudo systemctl restart k3s
+sudo k3s secrets-encrypt status        # Encryption Status: Disabled / Current Rotation Stage: start
+```
+
+`Disabled` here is expected, not a failure. Nothing is encrypted yet, and existing Secrets are untouched. The rewrite is a second step, followed by a second restart:
+
+```bash
+sudo k3s secrets-encrypt rotate-keys   # rotates and reencrypts; ~5 secrets/second
+sudo systemctl restart k3s             # same arguments as before
+sudo k3s secrets-encrypt status        # Encryption Status: Enabled / Stage: reencrypt_finished
+```
+
+Stopping after `enable` is the common failure: the flag is set and the config file exists, so the change looks complete, while status still reads `Disabled` and every pre-existing Secret is still plaintext on disk. Encryption is only real once status reports `Enabled` and `reencrypt_finished`.
+
+### Key rotation
+
+Current k3s performs the prepare → rotate → reencrypt sequence in a single command, and a restart afterwards is part of the sequence:
+
+```bash
+sudo k3s secrets-encrypt rotate-keys
+sudo systemctl restart k3s
+sudo k3s secrets-encrypt status        # Stage: reencrypt_finished, one active key
+```
+
+Rotation is warranted on suspected key or node exposure, and after any recovery from a lost or restored disk. Note that this is the same command that completes the retrofit above — an unencrypted cluster is just the case where the old key does not exist yet.
+
+### Key backup
+
+Once Secrets are encrypted, `encryption-config.json` is the **only** means of reading an etcd snapshot. If it is lost, every encrypted Secret becomes unrecoverable and an etcd backup alone is worthless.
+
+Storing the key alongside the etcd snapshots negates the protection, as a single compromised backup set then yields both halves. The key belongs somewhere the snapshots are not — a password manager or an offline copy. Whether a snapshot from the previous month is still decryptable is a reasonable check to include in any restore drill.
+
+### HA considerations (Phase 3+)
+
+With a single server, `enable` and `rotate-keys` are one command on one host. Once cp-2/cp-3 join (§6) the shape changes: pick **one** server to run the `secrets-encrypt` commands from, and after each phase — `enable`, then `rotate-keys` — restart **every** server before starting the next phase. A partial rollout leaves servers disagreeing on how to read etcd.
+
+Restarts should be sequenced one host at a time to preserve etcd quorum. `secrets-encrypt status` reports `Server Encryption Hashes: All hashes match` once the fleet has converged; that line, not the restart finishing, is the signal that the phase is done.
+
+### Related
+
+This section covers Secrets at rest within the cluster. It does not address how secret material reaches the cluster: credentials created by hand via `kubectl create secret` exist only in etcd and are not reproducible from this repository. That is a separate, currently open concern.
 
 ---
 

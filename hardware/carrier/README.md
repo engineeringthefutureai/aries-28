@@ -96,7 +96,7 @@ Note: these are current working files, not final released parts. The bay pitches
 
 **The earlier fit test does not cover this file.** Three plywood carrier plates threaded onto the real 6.35mm rods alongside the plates, each carrying a Pi 5 — that passed, and validated the rod-hole interface *as it stood then*. The parametric model was not built to reproduce that geometry, and this SVG has since been re-exported from it, so the rod placement is no longer the placement that was tested. Carrier and plates still agree with each other by construction (both read `calculate_rod_centers()`), but the pair is unproven in plywood. A dimensioned reference drawing will be added as the design is finalized.
 
-Beads now exist and print — see [`../rack/README.md`](../rack/README.md). Assembling carrier + plates + beads + rods into one working cartridge, and confirming a carrier swings out of a populated rack, is the outstanding milestone.
+The bay parts now exist and print — a bay base plus four bay posts, see [`../rack/README.md`](../rack/README.md). Assembling carrier + plates + bay bases + bay posts + rods into one working cartridge, and confirming a carrier swings out of a populated rack, is the outstanding milestone.
 
 Board variants are named by **hole-pattern group**, not by individual board, since the Pi 3B/4B/5 share one 85×56mm footprint and M2.5 holes on 58×49mm — one carrier fits all three (`design-doc.md` §3.2):
 - `carrier-rpi-b.*` — Pi 3B / 4B / 5 (shared footprint)

@@ -127,10 +127,10 @@ class ParametricCarrierPlate:
             # 4b. Trim the front-right lead-in tab back.
             # Its outer edge used to run straight out from the bottom of the
             # rod hole to the plate's right edge, which made the tab longer
-            # than it needs to be and buried the pivot bead in it. Replace that
+            # than it needs to be and buried the pivot station in it. Replace that
             # ledge with a single arc leaving the hole tangentially at the
             # hole's lowest point, so the tab tapers to a tip short of the
-            # plate edge and hands the material back to the bead.
+            # plate edge and hands the material back to the base.
             lead_radius = hardware_utils.CARRIER_LEAD_IN_RADIUS * rod_radius
             tab_top_y = fr_center.y - hole_radius   # the hole's lowest point
             arc_center_y = tab_top_y - lead_radius

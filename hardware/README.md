@@ -4,7 +4,7 @@ Fabrication files for Aries 28, organized **by part**. Each part has its own fol
 
 ## The rod-and-bead rack is generated
 
-Plates, rods, beads, the carrier, and the board they hold are built by a suite of Python scripts that run inside FreeCAD. The `.svg` and `.stl` files for those parts are **exports from that model**, not drawings maintained by hand: a change goes into the generator, and the cut files are re-exported. See [`MODEL.md`](MODEL.md) for how to run it, what each generator builds, and which gaps are known and still open.
+Plates, rods, bay bases, bay posts, the carrier, and the board they hold are built by a suite of Python scripts that run inside FreeCAD. The `.svg` and `.stl` files for those parts are **exports from that model**, not drawings maintained by hand: a change goes into the generator, and the cut files are re-exported. See [`MODEL.md`](MODEL.md) for how to run it, what each generator builds, and which gaps are known and still open.
 
 Everything else here — panels, frame, power bay, and the rest — is still specified directly, as below.
 
@@ -34,7 +34,7 @@ For the generated parts this is unchanged in spirit but sharper in practice: the
 |---|---|---|---|---|
 | Carrier | [`carrier/`](carrier/) | Holds one SBC; mounts into the rack | `[PRINT]` / `[SHEET]` | generated; SHEET exported (`carrier-rpi-b.svg`, spacers nested); PRINT STL pending |
 | Spacer | [`spacer/`](spacer/) | Lifts a board off a sheet carrier | `[SHEET]` / `[PRINT]` | superseded for SHEET route — nested in the carrier SVG; see carrier |
-| Rack | [`rack/`](rack/) | Cartridge of bays at one pitch (30 mm or 42 mm) | `[SHEET]` / `[PRINT]` / `[BUY]` | generated; plates exported, beads designed and printable (`rack-bead-30.stl`); cartridge not yet assembled |
+| Rack | [`rack/`](rack/) | Cartridge of bays at one pitch (30 mm or 42 mm) | `[SHEET]` / `[PRINT]` / `[BUY]` | generated; plates exported, bay base and bay post designed and printable (`rack-bay-base.stl`, `rack-bay-post-30.stl`); cartridge not yet assembled |
 | Panels | [`panels/`](panels/) | Enclosure walls (show/solid faces) | `[SHEET]` | pending; optional layer |
 | Frame | [`frame/`](frame/) | 2020 extrusion skeleton + corners | `[BUY]` | specified (cut plan pending) |
 | Power bay | [`power-bay/`](power-bay/) | PSU/fuse/distribution mounting | `[PRINT]` / `[BUY]` | pending |

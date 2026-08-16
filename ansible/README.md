@@ -15,6 +15,10 @@ reproducible rather than hand-configured:
   minimal on compute nodes).
 - k3s install: `server --cluster-init` for the first server, `server --server`
   for additional control-plane nodes, `agent` for workers.
+- Secrets encryption at rest: `--secrets-encryption` on every server (see
+  [`../docs/node-setup.md`](../docs/node-setup.md) §8). Trivial as an install
+  flag and awkward to retrofit, so the role sets it rather than leaving it to
+  per-node manual configuration.
 - Hostname per inventory.
 - kubeconfig fetch.
 

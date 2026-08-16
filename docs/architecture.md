@@ -36,7 +36,7 @@ Each level is the unit of a particular kind of change. A change enters at the lo
 |---|---|---|---|---|
 | Reflash / replace a node with the same board type | **Carrier / Bay** | one node | trivial | routine |
 | Swap a board for a different type that fits the pitch | **Bay** | one node (+ a carrier variant) | trivial | occasional |
-| New board class needs a different pitch/size | **Rack** | one rack (re-bead or rebuild the cartridge; remount affected nodes) | moderate | rare |
+| New board class needs a different pitch/size | **Rack** | one rack (reprint its posts or rebuild the cartridge; remount affected nodes) | moderate | rare |
 | Add capacity of an existing class | **Rack** | add a rack cartridge, or populate empty bays | low–moderate | as needed |
 | Facilities change (second switch, gateway/registry node, PSU) | **Deck** | one deck | moderate | rare |
 | Fundamental redesign | **System** | the machine | rebuild | designed to be unnecessary |
@@ -72,7 +72,7 @@ Racks are independent cartridges, each at a single bay pitch, sized to a **class
 - **Compute rack — dense pitch (30 mm):** bare/diskless nodes (compute + network only) — the gateway, light worker, and face node. Tight because there is nothing stacked to heat-soak; the small gap is adequate airflow for a cooled bare board.
 - **Expansion rack — tall pitch (42 mm):** nodes with vertical accessories — NVMe HATs (etcd on every control-plane node, plus the storage node), AI accelerators, or future add-ons. Now most of the compute fleet, not a minority case, since SD isn't recommended for etcd (design-doc.md §4.3). Generous height each (which also means generous airflow). Sized from the current ~34 mm Pi-5-plus-SSD stack plus headroom for taller HATs and future options.
 
-Two pitches means two bead sizes (rod-and-bead rack) — a one-time design cost, not a per-change one. Each rack remains an independently-assemblable cartridge: build and wire it on the bench, drop it into its deck as a unit, and reconfigure it later without disturbing its neighbors.
+Two pitches means two post lengths (rod-and-bead rack; the bridged base is the same at both) — a one-time design cost, not a per-change one. Each rack remains an independently-assemblable cartridge: build and wire it on the bench, drop it into its deck as a unit, and reconfigure it later without disturbing its neighbors.
 
 ## 7. The bay & carrier layers
 
