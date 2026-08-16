@@ -205,10 +205,15 @@ that is trivial to build, to fillet, to print and to think about.
 The base does **not** change with the pitch, so there is one `rack-bay-base.stl`
 for both the 30 mm and the 42 mm rack.
 
-### The cable comb
+### The cable combs
 
-Hanging off the back of the rear bridge, a row of C-clips for the ethernet
-runs that come up the rack from below:
+Two of them, one per run. Both are rows of clips a cable is pressed into and
+stays in, both are eight wide because the bottom bay's comb has to pass every
+bay's cable, and both put the face they hang off directly behind every clip so
+none of their depth is spent on a wall that is already there. They differ in
+what they carry and in how far up the base they reach.
+
+#### Ethernet, off the back of the rear bridge
 
 | | |
 |---|---|
@@ -263,6 +268,50 @@ The whole row lands on the rear bridge with nothing overhanging. 8 clips need
 66.7 mm of the bridge's 78.7 mm, so the offset is what is left after the end
 walls: at more than 15.15 mm the row runs off the left end.
 
+#### Power, on the left web
+
+The node's XT30 pigtail is a bonded red/black pair, and it is carried **on
+edge** — one lead behind the other rather than side by side. So a clip here is
+not a bore but a **stadium**: two wire diameters long, one wide, standing normal
+to the web, with the inner circle tangent to the web's face and the outer one
+tangent to that in turn. The pair drops in the way it comes off the reel, red
+inboard against the web and black outboard behind it.
+
+| | |
+|---|---|
+| Clips | 8 — one per bay, as on the ethernet comb |
+| Wire | 3/32 in (2.381 mm) per conductor |
+| Pocket | 2.381 × 4.763 mm — one wire wide, two deep |
+| Mouth | 2.143 mm, 90% of the wire, so the lip a lead is pressed past is 0.12 mm |
+| Between clips | 1/8 in (3.175 mm), and half that outboard of the two end ones |
+| Depth | 6 mm proud of the web, leaving 1.24 mm of horn |
+| Height | 3 mm — the web band, and nothing above it |
+| Backing | none |
+| Position | centred on the web; 44.45 mm of clips on a 72.58 mm face |
+
+Nothing pinches between the two wires — the pocket's waist is its full width.
+That is not an oversight: the pair is bonded, so it cannot be separated to be
+threaded in a lead at a time, and a waist would only be something to fight.
+The mouth is looser than the ethernet comb's 71% for the same reason it can
+afford to be: the web is the back wall, these leads are lighter than a patch
+cable, and the clip is a keeper rather than a clamp.
+
+**Where the ethernet comb had to be beefed up, this one does not.** The
+ethernet comb stands into the band the carrier rides in, which is why it needs
+a beam. The power comb never leaves the web, so the web is its backing and the
+carrier never sees it — swept a degree at a time through the full 45°, the
+comb costs the swing nothing.
+
+The left web runs on the rack's diagonal rather than square to anything, so the
+comb is worked in the web's own frame — `u` along the face from the front-left
+station towards the rear-left, `v` out of it — and `_at`/`_place` are the only
+two things that know the difference. Being centred, it starts at u=14.07, well
+clear of the two stations' discs, which only reach past the face for u<2.85 and
+u>69.73.
+
+Two corners come out of it, where the comb's ends run back into the face of the
+web, and both are rounded at 1.0 mm.
+
 **Bay post** — one of the four collars above it:
 
 | | |
@@ -282,6 +331,54 @@ pitch is unaffected by how tall it is.
 
 That opening is what retired the old bead's board clip: where the bead's full
 tube overhung the board by 0.5 mm, a post's nearest wall stands 1.0 mm off it.
+
+#### The rear-right post is not the same part
+
+It carries one **ethernet clip** on its back, so a bay uses three of the plain
+post and one of this. Same generator, one flag (`CableClip`), and
+`generate_rack.py` keeps two masters and links the RR station to the second.
+
+The post is built with its opening on +x, so its back is −x — and once it is
+turned onto the rack's diagonal that back faces 45° out of the rear-right
+corner, which is where the run turns out of the base's comb and heads for the
+node.
+
+**The clip is revolved about the post's own axis, not extruded off it.** That
+is the whole design. A C is drawn in the meridian plane — bore circle, outer
+circle, both concentric, the two ends of the C closed off with semicircular
+caps — and swept 30° round the post, 15° either side of its back. What comes
+out follows the collar instead of being a block stuck onto a cylinder, and it
+has no corner on it anywhere: every boundary of the profile is an arc, and the
+caps are tangent to both circles by construction, their radius being half the
+wall and their centres sitting on the mid-radius.
+
+| | |
+|---|---|
+| Bore | 7/32 in (5.556 mm), as on the base's comb |
+| Mouth | 5/32 in (3.969 mm), opening radially outward |
+| Wall | 2.0 mm, which also sets the 1.0 mm cap radius |
+| Wrap | 255.7° — the cap angle falls out of the mouth, not the other way round |
+| Sweep | 30°, giving 4.4 mm of grip along the cable |
+| Height | 0 → 9.56 mm, tangent to the post's bottom face |
+| Cost | +115.6 mm³ |
+
+Two things follow from putting the **bore tangent to the post's outer shell**.
+The cable rests on the collar; and the C's back wall lies *inside* the collar's
+own wall, so the two merge on the fuse and the collar is the back of the clip
+for free — the same trick the base's combs play against the bridge and the web.
+That is also why `ClipWallThickness` is 2.0 rather than the post's own 2.5: at
+2.5 the C's back would land exactly on the rod bore, and the fuse would be two
+solids sharing a face. At 2.0 it stops 0.5 mm short of it.
+
+**Nothing is cut from the post.** The channel and its mouth are holes in the
+revolved profile, not cuts into the collar, so the clip is purely fused on and
+the 225° collar is untouched underneath it.
+
+One consequence of revolving: the channel is an arc, not a straight tube. Over
+30° at a centreline radius of 8.45 mm the arc stands 0.29 mm off its own chord,
+so the straight-through aperture is about 5.27 mm rather than the bore's 5.556.
+A patch lead will take that up — it is a clip, and the squeeze is grip — but a
+full-fat 6 mm jacket would want the bore opened by that much.
 
 ## Known gaps
 
@@ -306,6 +403,18 @@ the model:
   scallop on the plates' rear edge at the eight clip positions, which is not
   modelled. Moving the comb back 0.7 mm would also do it, at the cost of the
   tangency.
+- **The plates cover the power comb outright.** The plates are rectangles on
+  the rod bounding box and the left web runs on the rack's diagonal, so the
+  plate's left edge sits outboard of the whole comb — the eight lanes are
+  3.6 mm under it at the front clip and 19.4 mm at the rear, and even the
+  comb's furthest-out corner is 1.38 mm inside the edge. So this one cannot be
+  fixed by nibbling the edge the way the ethernet one can; it wants eight
+  **slots** through the plate, on the comb's own axis. Only the bottom plate
+  actually has to pass anything, since the runs come up from the facilities
+  deck and terminate at their bays. Free on a laser, not modelled, and until it
+  is the leads have to be dressed round the outside of the bottom plate.
+  Backing the comb off is not an alternative here: there is no depth of comb
+  that gets clear of a plate that overhangs it by 19 mm.
 - **Two posts stand mostly on the carrier, not on their pad.** A post's foot is
   a 225° annulus and the carrier leaves it far less than that to stand on: the
   rear pair land 93–99% on pad, but the front-right is at 32% and the

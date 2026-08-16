@@ -16,6 +16,11 @@ carrier is absent and then cutting straight across gives up a little area and
 buys a shape that is simple to make, simple to print and simple to reason
 about.
 
+Two cable combs hang off it, one per run: the ethernet comb on the back of the
+rear bridge, and the power comb on the left web. Both are rows of clips a cable
+is pressed into; they differ in what they carry and in how far up the base they
+reach.
+
 The four bay posts of the bay stand on those pads -- see
 bay_post_generator.py.
 
@@ -101,31 +106,55 @@ class ParametricBayBase:
         # bay's cable. Sizes are imperial because the cable is: a Cat5e/6 jacket
         # is a whisker under 7/32", and the mouth at 5/32" is narrow enough that
         # a cable has to be pressed past it rather than falling out.
-        obj.addProperty("App::PropertyInteger", "CableCount", "Cable comb",
+        obj.addProperty("App::PropertyInteger", "CableCount", "Ethernet comb",
                         "How many cables the comb holds; one per bay").CableCount = 8
-        obj.addProperty("App::PropertyLength", "CableHoleDiameter", "Cable comb",
+        obj.addProperty("App::PropertyLength", "CableHoleDiameter", "Ethernet comb",
                         "Bore of one clip, i.e. the cable it takes").CableHoleDiameter = 7 / 32 * 25.4
-        obj.addProperty("App::PropertyLength", "CableMouthWidth", "Cable comb",
+        obj.addProperty("App::PropertyLength", "CableMouthWidth", "Ethernet comb",
                         "Opening a cable is pressed through").CableMouthWidth = 5 / 32 * 25.4
         # Also the material outboard of the two end clips, halved at each end,
         # so every clip in the row has the same wall around it.
-        obj.addProperty("App::PropertyLength", "CableGap", "Cable comb",
+        obj.addProperty("App::PropertyLength", "CableGap", "Ethernet comb",
                         "Material between neighbouring clips").CableGap = 1 / 8 * 25.4
         # Each bore is tangent to the back of the bridge, so the bridge is the
         # back of every clip and none of this depth is spent on a wall that is
         # already there. At 6mm the material either side of a mouth comes out
         # about 1.3mm thick.
-        obj.addProperty("App::PropertyLength", "CableCombDepth", "Cable comb",
+        obj.addProperty("App::PropertyLength", "CableCombDepth", "Ethernet comb",
                         "How far the comb stands proud of the rear bridge").CableCombDepth = 6.0
-        obj.addProperty("App::PropertyLength", "CableCombOffset", "Cable comb",
+        obj.addProperty("App::PropertyLength", "CableCombOffset", "Ethernet comb",
                         "From the base's right edge to the right end of the comb").CableCombOffset = 15.15
-        obj.addProperty("App::PropertyLength", "CableClipFillet", "Cable comb",
+        obj.addProperty("App::PropertyLength", "CableClipFillet", "Ethernet comb",
                         "Rounding on the mouth of each clip").CableClipFillet = 0.5
         # Where the backing beam runs into the two rear landing pads. Four
         # corners, two per pad, and they are the load path from the comb into
         # the rest of the base, so they are rounded harder than the clips.
-        obj.addProperty("App::PropertyLength", "CombBackingFillet", "Cable comb",
+        obj.addProperty("App::PropertyLength", "CombBackingFillet", "Ethernet comb",
                         "Rounding where the backing meets a rear landing pad").CombBackingFillet = 1.0
+
+        # The power comb: the same idea on the left web, for the node's red and
+        # black leads. It holds a bonded pair on edge -- one slot two wires
+        # deep, red inboard and black outboard -- and unlike the ethernet comb
+        # it stays inside the web band, 3mm tall and unbacked. It has no offset
+        # property: it is centred on the left web by construction.
+        obj.addProperty("App::PropertyInteger", "PowerCableCount", "Power comb",
+                        "How many pairs the comb holds; one per bay").PowerCableCount = 8
+        obj.addProperty("App::PropertyLength", "PowerWireDiameter", "Power comb",
+                        "One conductor, insulation included").PowerWireDiameter = 3 / 32 * 25.4
+        # 90% of the wire, so a lead is pressed past a 0.12mm lip rather than
+        # having to be forced past the ethernet comb's 71%. These wires are
+        # softer and lighter than a patch lead and the slot's back wall is the
+        # web itself, so the mouth is a keeper, not a clamp.
+        obj.addProperty("App::PropertyLength", "PowerMouthWidth", "Power comb",
+                        "Opening a pair is pressed through").PowerMouthWidth = 0.9 * 3 / 32 * 25.4
+        obj.addProperty("App::PropertyLength", "PowerCableGap", "Power comb",
+                        "Material between neighbouring clips").PowerCableGap = 1 / 8 * 25.4
+        # The inner wire is tangent to the web, so this has to cover two wire
+        # diameters plus the horns. At 6mm the horns come out 1.24mm deep.
+        obj.addProperty("App::PropertyLength", "PowerCombDepth", "Power comb",
+                        "How far the comb stands proud of the left web").PowerCombDepth = 6.0
+        obj.addProperty("App::PropertyLength", "PowerClipFillet", "Power comb",
+                        "Rounding on the mouth of each clip").PowerClipFillet = 0.5
 
         # Published so a post can be placed off it by expression instead of
         # having its position written out when the assembly is built. Output,
@@ -201,6 +230,12 @@ class ParametricBayBase:
         comb = (_cable_comb(obj, rod_centers, outer_radius, bore_radius, rod_diameter)
                 if web_height > 0 else None)
 
+        # And its opposite number on the left web, for the power leads. This
+        # one never leaves the web band, so it is only as tall as the web and
+        # needs no backing -- the web is directly behind every clip.
+        power = (_power_comb(obj, rod_centers, outer_radius)
+                 if web_height > 0 else None)
+
         parts = []
         if comb is not None:
             # The backing beam and the two rear pads are one piece: the beam is
@@ -240,6 +275,9 @@ class ParametricBayBase:
         if web_height > 0:
             parts.extend(_webs(rod_centers, outer_radius, rod_diameter / 2.0, web_height))
 
+        if power is not None:
+            parts.append(power.block(web_height, wall))
+
         final_shape = parts[0]
         for part in parts[1:]:
             final_shape = final_shape.fuse(part)
@@ -254,6 +292,9 @@ class ParametricBayBase:
 
         if comb is not None:
             final_shape = comb.carve(final_shape, web_height + pad_height)
+
+        if power is not None:
+            final_shape = power.carve(final_shape, web_height)
 
         # Merge the face splits the booleans leave behind, before anything
         # delicate happens to the solid. Two things here are delicate: the key
@@ -272,6 +313,11 @@ class ParametricBayBase:
                 comb.merge_corners(rod_centers, disc_radius, outer_radius,
                                    float(obj.CombBackingFillet)),
                 context="Comb merge corner")
+
+        if power is not None:
+            final_shape = hardware_utils.fillet_corners(
+                final_shape, power.merge_corners(float(obj.PowerClipFillet) * 2.0),
+                context="Power comb merge corner")
 
         # Receive the four keys of the bay below.
         key_radius = float(obj.KeyDiameter) / 2.0
@@ -440,6 +486,147 @@ class _CableComb:
         for x in (self.left, self.right):
             corners.append((x, self.face, self.fillet * 2.0))
         return hardware_utils.fillet_corners(shape, corners, context="Cable clip")
+
+
+class _PowerComb:
+    """A row of clips on the left web, for the nodes' red and black leads.
+
+    The same trick as the ethernet comb -- a pocket tangent to the face it
+    hangs off, with a mouth narrower than the pocket so a lead is pressed in
+    and stays -- but for a bonded pair carried **on edge**: red inboard against
+    the web, black outboard behind it. So the pocket is not a bore but a
+    stadium two wire diameters long and one wide, standing normal to the face,
+    and the pair drops into it the way it comes off the reel.
+
+    It stays in the web band, `WebHeight` tall and with nothing backing it. The
+    ethernet comb had to be beefed up because it stands into the band the
+    carrier rides in; this one never leaves the web, so the web is its backing.
+
+    Everything is worked in the web's own frame -- `u` along the face from the
+    front-left station towards the rear-left, `v` out of it -- because the left
+    web runs on the rack's diagonal rather than square to anything. `_at` and
+    `_place` are the only things that know the difference.
+    """
+
+    def __init__(self, obj, rod_centers, outer_radius):
+        self.wire_radius = float(obj.PowerWireDiameter) / 2.0
+        self.mouth = float(obj.PowerMouthWidth)
+        self.fillet = float(obj.PowerClipFillet)
+        gap = float(obj.PowerCableGap)
+        self.depth = float(obj.PowerCombDepth)
+        count = int(obj.PowerCableCount)
+
+        fl_center, _fr, rl_center, _rr = rod_centers
+
+        # The web's outer face: the FL-RL centre line pushed out by one outer
+        # radius. Same construction as the web itself, so the two cannot drift.
+        axis = App.Vector(rl_center.x - fl_center.x, rl_center.y - fl_center.y, 0)
+        self.length = axis.Length
+        self.angle = math.degrees(math.atan2(axis.y, axis.x))
+        self.axis = _unit(axis)
+        self.normal = App.Vector(-self.axis.y, self.axis.x, 0)   # points away
+        self.origin = fl_center + self.normal * outer_radius
+        self.origin.z = 0
+
+        # Two wire diameters of pocket: the inner circle tangent to the web,
+        # the outer one tangent to it in turn.
+        self.inner_v = self.wire_radius
+        self.outer_v = 3 * self.wire_radius
+
+        # Half a gap outboard of each end clip, as on the ethernet comb, so
+        # every clip in the row carries the same wall.
+        pitch = 2 * self.wire_radius + gap
+        span = count * 2 * self.wire_radius + (count - 1) * gap
+        self.left = (self.length - span - gap) / 2.0
+        self.right = self.left + span + gap
+        self.centers = [self.left + gap / 2.0 + self.wire_radius + step * pitch
+                        for step in range(count)]
+
+    def _place(self, shape):
+        """A shape built in the web's frame, moved onto the web."""
+        shape = shape.copy()
+        shape.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), self.angle)
+        shape.translate(self.origin)
+        return shape
+
+    def _at(self, u, v):
+        """Where (u, v) on the web lands in the model."""
+        return self.origin + self.axis * u + self.normal * v
+
+    def block(self, height, lap):
+        """The bar the clips are cut out of.
+
+        Runs `lap` back into the web rather than meeting its face on a shared
+        plane -- a fuse OpenCASCADE has to reason about, versus one it does
+        not. The web is `outer_radius` deep, so there is room for it.
+        """
+        return self._place(Part.makeBox(
+            self.right - self.left, self.depth + lap, height,
+            App.Vector(self.left, -lap, 0)))
+
+    def merge_corners(self, radius):
+        """Where the comb's two ends run back into the face of the web."""
+        return [(self._at(u, 0.0).x, self._at(u, 0.0).y, radius)
+                for u in (self.left, self.right)]
+
+    def carve(self, shape, height):
+        """Cut the pockets and their mouths, and round what that leaves."""
+        half = self.mouth / 2.0
+        for u in self.centers:
+            for v in (self.inner_v, self.outer_v):
+                shape = shape.cut(self._place(hardware_utils.through_cutter(
+                    self.wire_radius, height, App.Vector(u, v, 0))))
+            # The waist joining them. Two wires bonded together cannot be
+            # separated to be threaded in one at a time, so nothing pinches
+            # between them -- the pocket is a plain stadium.
+            shape = shape.cut(self._place(hardware_utils.through_box(
+                2 * self.wire_radius, self.outer_v - self.inner_v, height,
+                App.Vector(u - self.wire_radius, self.inner_v, 0))))
+            shape = shape.cut(self._place(hardware_utils.through_box(
+                self.mouth, self.depth - self.outer_v + hardware_utils.CUT_OVERSHOOT,
+                height, App.Vector(u - half, self.outer_v, 0))))
+
+        if self.fillet <= 0:
+            return shape
+
+        # As on the ethernet comb: the tip of each horn where the mouth runs
+        # out to the outer face, and the barb behind it where the mouth wall
+        # meets the outer circle. The barb is the one the pair is dragged over.
+        shoulder = math.sqrt(max(0.0, self.wire_radius ** 2 - half ** 2))
+        corners = []
+        for u in self.centers:
+            for side in (-1.0, 1.0):
+                for v in (self.depth, self.outer_v + shoulder):
+                    at = self._at(u + side * half, v)
+                    corners.append((at.x, at.y, self.fillet))
+        # And the comb's own two outer corners, which are nobody's clip.
+        for u in (self.left, self.right):
+            at = self._at(u, self.depth)
+            corners.append((at.x, at.y, self.fillet * 2.0))
+        return hardware_utils.fillet_corners(shape, corners, context="Power clip")
+
+
+def _power_comb(obj, rod_centers, outer_radius):
+    """The bay's power comb, or None if it has been switched off."""
+    if int(obj.PowerCableCount) <= 0 or float(obj.PowerWireDiameter) <= 0:
+        return None
+    if not 0 < float(obj.PowerMouthWidth) < float(obj.PowerWireDiameter):
+        App.Console.PrintWarning(
+            "Bay base: the power mouth has to be narrower than the wire and wider "
+            "than nothing, or the clips will not hold; leaving the comb off.\n")
+        return None
+    comb = _PowerComb(obj, rod_centers, outer_radius)
+    if comb.depth <= comb.outer_v + comb.wire_radius:
+        App.Console.PrintWarning(
+            "Bay base: the power comb is not deep enough to contain both wires; "
+            "leaving it off.\n")
+        return None
+    if comb.left <= 0:
+        App.Console.PrintWarning(
+            f"Bay base: {int(obj.PowerCableCount)} power clips need more than the "
+            f"{comb.length:.1f}mm the left web has; leaving the comb off.\n")
+        return None
+    return comb
 
 
 def _cable_comb(obj, rod_centers, outer_radius, bore_radius, rod_diameter):

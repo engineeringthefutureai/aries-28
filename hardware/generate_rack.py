@@ -129,20 +129,31 @@ def build_rack_assembly():
     # says how tall it is.
     base.setExpression("CarrierPad", f"{carrier_plate.Name}.Thickness")
 
-    # 6. The post master, parked in front of the rack and hidden -- four links
-    # per bay is what actually stands in it. It takes the rest of the pitch
-    # above the base, and everything the two have to agree on for the keys to
-    # seat comes from the base.
-    post = bay_post_generator.create_bay_post(rods)
-    post.Label = "Bay_Post_Original"
-    post.setExpression(
-        "Height", f"{base.Name}.BayPitch - {base.Name}.WebHeight - {base.Name}.CarrierPad")
-    for shared in ("WallThickness", "RodClearance", "KeyDiameter", "KeyHeight"):
-        post.setExpression(shared, f"{base.Name}.{shared}")
-    post.setExpression(
-        "Placement.Base.y", f"-({pcb_original.Name}.Length + 12 * {rods.Name}.Diameter)")
-    if App.GuiUp:
-        post.ViewObject.Visibility = False
+    # 6. The post masters, parked in front of the rack and hidden -- links are
+    # what actually stand in the bays. They take the rest of the pitch above
+    # the base, and everything a post and the base have to agree on for the
+    # keys to seat comes from the base.
+    #
+    # Two of them, because the rear-right post is not the same part as the
+    # other three: it carries the ethernet clip on its back. Everything else
+    # about it is identical, so it is the same generator with one flag set.
+    def post_master(label, park, clip):
+        obj = bay_post_generator.create_bay_post(rods)
+        obj.Label = label
+        obj.CableClip = clip
+        obj.setExpression(
+            "Height", f"{base.Name}.BayPitch - {base.Name}.WebHeight - {base.Name}.CarrierPad")
+        for shared in ("WallThickness", "RodClearance", "KeyDiameter", "KeyHeight"):
+            obj.setExpression(shared, f"{base.Name}.{shared}")
+        obj.setExpression(
+            "Placement.Base.y", f"-({pcb_original.Name}.Length + {park} * {rods.Name}.Diameter)")
+        if App.GuiUp:
+            obj.ViewObject.Visibility = False
+        return obj
+
+    post = post_master("Bay_Post_Original", 12, False)
+    post_rr = post_master("Bay_Post_RR_Original", 16, True)
+    masters = {"RR": post_rr}
 
     # 7. Drop the carrier clone into the bay, resting on the base's webs and
     # captured from above by the four posts standing on the pad around it.
@@ -176,7 +187,7 @@ def build_rack_assembly():
     post_z = f"{carrier_z} + {base.Name}.CarrierPad"
     for station in range(len(POST_STATIONS)):
         standing = doc.addObject("App::Link", "Bay_Post_Clone")
-        standing.LinkedObject = post
+        standing.LinkedObject = masters.get(POST_STATIONS[station], post)
         standing.Label = f"Bay_Post_Bay1_{POST_STATIONS[station]}"
         _place_post(standing, base, station, post_z)
 
@@ -190,7 +201,7 @@ def build_rack_assembly():
 
         for station in range(len(POST_STATIONS)):
             standing = doc.addObject("App::Link", "Bay_Post_Clone")
-            standing.LinkedObject = post
+            standing.LinkedObject = masters.get(POST_STATIONS[station], post)
             standing.Label = f"Bay_Post_Bay{bay}_{POST_STATIONS[station]}"
             _place_post(standing, base, station, f"{post_z} + {step} * {pitch}")
 
